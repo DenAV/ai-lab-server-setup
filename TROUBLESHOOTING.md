@@ -96,7 +96,7 @@ Collect all logs, configs, and system info into a zip for support:
 bash ~/ai-lab-server-setup/scripts/collect-diagnostics.sh
 ```
 
-Output: `~/lab-diagnostics-YYYYMMDD-HHMM.zip`
+Output: `~/lab-diagnostics-YYYYMMDD-HHMM.tar.gz`
 
 What it collects:
 
@@ -110,7 +110,7 @@ What it collects:
 Download the archive:
 
 ```bash
-scp lab@<server-ip>:~/lab-diagnostics-*.zip .
+scp lab@<server-ip>:~/lab-diagnostics-*.tar.gz .
 ```
 
 > **WARNING**: Review the archive before sharing — secrets are redacted

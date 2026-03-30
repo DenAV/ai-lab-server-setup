@@ -14,7 +14,7 @@ set -euo pipefail
 
 TIMESTAMP="$(date +%Y%m%d-%H%M)"
 DIAG_DIR="/tmp/lab-diagnostics-${TIMESTAMP}"
-OUTPUT_FILE="${HOME}/lab-diagnostics-${TIMESTAMP}.zip"
+OUTPUT_FILE="${HOME}/lab-diagnostics-${TIMESTAMP}.tar.gz"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
@@ -121,11 +121,10 @@ collect "fail2ban-status" "sudo fail2ban-client status sshd 2>/dev/null"
 echo "[7/7] Running validation..."
 collect "validate" "bash ${PROJECT_DIR}/scripts/validate.sh 2>&1"
 
-# --- Create zip ---
+# --- Create archive ---
 echo ""
 echo "  Creating archive..."
-cd /tmp
-zip -rq "${OUTPUT_FILE}" "lab-diagnostics-${TIMESTAMP}/"
+tar -czf "${OUTPUT_FILE}" -C /tmp "lab-diagnostics-${TIMESTAMP}/"
 rm -rf "${DIAG_DIR}"
 
 echo ""
