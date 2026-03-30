@@ -71,6 +71,7 @@ Default Ollama models pulled in background: `llama3.2`, `nomic-embed-text`.
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
 | [docs/](docs/) | Detailed setup guides and architecture decision records |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions |
 
 ## AI Platform Stack (Optional)
 

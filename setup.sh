@@ -146,6 +146,16 @@ fi
 # Ensure lab user is in docker group
 usermod -aG docker "${LAB_USER}"
 
+# Fix Docker 29+ / Traefik API version compatibility
+if ! grep -q "DOCKER_MIN_API_VERSION" /etc/systemd/system/docker.service.d/min_api_version.conf 2>/dev/null; then
+  mkdir -p /etc/systemd/system/docker.service.d
+  printf '[Service]\nEnvironment="DOCKER_MIN_API_VERSION=1.24"\n' \
+    > /etc/systemd/system/docker.service.d/min_api_version.conf
+  systemctl daemon-reload
+  systemctl restart docker
+  echo "  Docker API version fix applied"
+fi
+
 # --- 8. Ollama ---
 echo "[8/9] Installing Ollama..."
 if ! command -v ollama &>/dev/null; then

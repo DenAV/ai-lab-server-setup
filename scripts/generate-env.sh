@@ -122,7 +122,7 @@ TRAEFIK_VERSION=v3.3
 # =============================================================================
 # Dify
 # =============================================================================
-DIFY_VERSION=latest
+DIFY_VERSION=0.15.3
 DIFY_SECRET_KEY=${DIFY_SECRET}
 DIFY_DB_PASSWORD=${DIFY_DB_PASS}
 DIFY_REDIS_PASSWORD=${DIFY_REDIS_PASS}
