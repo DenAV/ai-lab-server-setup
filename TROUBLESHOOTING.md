@@ -2,6 +2,120 @@
 
 Common issues and solutions for AI Lab Server Setup.
 
+## Collecting logs
+
+### All services status
+
+```bash
+# Container status (running, restarting, exited)
+docker compose ps
+
+# System services
+systemctl status docker ollama ssh ufw fail2ban
+```
+
+### Service logs
+
+```bash
+# All services
+docker compose logs
+
+# Specific service (last 50 lines, follow)
+docker compose logs --tail=50 -f traefik
+docker compose logs --tail=50 -f flowise
+docker compose logs --tail=50 -f n8n
+docker compose logs --tail=50 -f langfuse
+docker compose logs --tail=50 -f dify-api
+docker compose logs --tail=50 -f dify-worker
+docker compose logs --tail=50 -f dify-web
+docker compose logs --tail=50 -f dify-nginx
+
+# All Dify services at once
+docker compose logs --tail=30 dify-api dify-worker dify-web dify-nginx dify-db dify-redis
+
+# Database logs
+docker compose logs --tail=30 langfuse-db
+docker compose logs --tail=30 dify-db
+docker compose logs --tail=30 dify-redis
+```
+
+### System logs
+
+```bash
+# Docker daemon
+sudo journalctl -u docker --since "1 hour ago" --no-pager
+
+# Ollama (native)
+sudo journalctl -u ollama --since "1 hour ago" --no-pager
+
+# SSH
+sudo journalctl -u ssh --since "1 hour ago" --no-pager
+
+# Cloud-init (provisioning)
+sudo cat /var/log/cloud-init-output.log
+cloud-init status --long
+```
+
+### Network diagnostics
+
+```bash
+# Docker networks
+docker network ls
+docker network inspect traefik-public --format '{{range .Containers}}{{.Name}} {{end}}'
+
+# Port bindings
+sudo ss -tlnp | grep -E '80|443|11434|6333'
+
+# Firewall rules
+sudo ufw status verbose
+
+# DNS resolution
+dig +short flow.example.com
+curl -sf -o /dev/null -w '%{http_code}' http://localhost:80
+```
+
+### Resource usage
+
+```bash
+# Container resource usage
+docker stats --no-stream
+
+# Disk usage
+df -h
+docker system df
+
+# Memory
+free -h
+```
+
+### Full diagnostic archive
+
+Collect all logs, configs, and system info into a zip for support:
+
+```bash
+bash ~/ai-lab-server-setup/scripts/collect-diagnostics.sh
+```
+
+Output: `~/lab-diagnostics-YYYYMMDD-HHMM.zip`
+
+What it collects:
+
+- System info (OS, CPU, memory, disk, network)
+- Docker state (containers, images, networks, volumes, stats)
+- Service logs (last 100 lines per container + systemd journals)
+- Network diagnostics (ports, firewall, DNS)
+- Sanitized configuration (secrets are redacted)
+- Validation script output
+
+Download the archive:
+
+```bash
+scp lab@<server-ip>:~/lab-diagnostics-*.zip .
+```
+
+> **WARNING**: Review the archive before sharing — secrets are redacted
+> automatically but verify manually.
+
 ## Traefik
 
 ### "client version 1.24 is too old" (Docker 29+)
