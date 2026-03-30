@@ -30,7 +30,7 @@ services:
   # Traefik — Reverse Proxy with automatic TLS
   # ===========================================================================
   traefik:
-    image: "traefik:${TRAEFIK_VERSION:-v3.3}"
+    image: "traefik:${TRAEFIK_VERSION:-v3.6}"
     container_name: traefik
     restart: unless-stopped
     command:
