@@ -59,6 +59,7 @@ echo "  AI Lab Server Setup"
 echo "============================================="
 echo "  User:     ${LAB_USER}"
 echo "  Timezone: ${TIMEZONE}"
+echo "  Swap:     ${SWAP_SIZE:-4G}"
 echo "  Qdrant:   ${QDRANT_VERSION}"
 echo "  Config:   ${REPO_DIR}"
 echo "============================================="
@@ -134,8 +135,22 @@ systemctl enable fail2ban
 systemctl restart fail2ban
 echo "  Fail2ban active"
 
-# --- 7. Docker ---
-echo "[7/9] Installing Docker..."
+# --- 7. Swap ---
+echo "[7/10] Configuring swap..."
+SWAP_SIZE="${SWAP_SIZE:-4G}"
+if [ ! -f /swapfile ]; then
+  fallocate -l "${SWAP_SIZE}" /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "  Swap ${SWAP_SIZE} created"
+else
+  echo "  Swap already configured"
+fi
+
+# --- 8. Docker ---
+echo "[8/10] Installing Docker..."
 if ! command -v docker &>/dev/null; then
   curl -fsSL https://get.docker.com | sh
   systemctl enable docker
@@ -156,8 +171,8 @@ if ! grep -q "DOCKER_MIN_API_VERSION" /etc/systemd/system/docker.service.d/min_a
   echo "  Docker API version fix applied"
 fi
 
-# --- 8. Ollama ---
-echo "[8/9] Installing Ollama..."
+# --- 9. Ollama ---
+echo "[9/10] Installing Ollama..."
 if ! command -v ollama &>/dev/null; then
   curl -fsSL https://ollama.com/install.sh | sh
   systemctl enable ollama
@@ -177,8 +192,8 @@ if [ -n "${OLLAMA_MODELS}" ]; then
   su - "${LAB_USER}" -c "nohup bash -c 'sleep 30 && ${PULL_CMD}' > /tmp/ollama-pull.log 2>&1 &"
 fi
 
-# --- 9. Qdrant + Python + shell config ---
-echo "[9/9] Setting up lab environment..."
+# --- 10. Qdrant + Python + shell config ---
+echo "[10/10] Setting up lab environment..."
 
 # Qdrant
 if ! docker ps -a --format '{{.Names}}' | grep -q '^qdrant$'; then
