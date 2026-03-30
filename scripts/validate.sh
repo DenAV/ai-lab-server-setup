@@ -59,6 +59,31 @@ echo "Environment:"
 check "lab-venv exists"    "test -d ~/lab-venv"
 check "pip in venv"        "test -x ~/lab-venv/bin/pip"
 
+# --- Docker Compose platform stack (optional) ---
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
+COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yml"
+
+if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quiet 2>/dev/null | grep -q .; then
+  echo ""
+  echo "Platform Stack (docker compose):"
+
+  # Expected containers from docker-compose.yml
+  CONTAINERS="traefik flowise n8n ollama-compose qdrant-compose langfuse langfuse-db dify-api dify-worker dify-web dify-nginx dify-db dify-redis"
+
+  for container in ${CONTAINERS}; do
+    check "${container}" "docker ps --format '{{.Names}}' | grep -q '^${container}$'"
+  done
+
+  echo ""
+  echo "Platform APIs:"
+  check "Traefik entrypoint"  "curl -sf -o /dev/null -w '%{http_code}' http://localhost:80 | grep -qE '(301|302|404)'"
+  check "Flowise API"         "curl -sf -o /dev/null https://localhost:443 -k 2>/dev/null || curl -sf http://localhost:3000 > /dev/null 2>&1 || docker exec flowise wget -q -O /dev/null http://localhost:3000 2>/dev/null"
+  check "n8n API"             "docker exec n8n wget -q -O /dev/null http://localhost:5678/healthz 2>/dev/null"
+  check "Langfuse API"        "docker exec langfuse wget -q -O /dev/null http://localhost:3000 2>/dev/null"
+  check "Dify API"            "docker exec dify-api python -c 'print(\"ok\")' 2>/dev/null || docker exec dify-nginx wget -q -O /dev/null http://localhost:80 2>/dev/null"
+fi
+
 echo ""
 echo "=== Results: ${PASS} passed, ${FAIL} failed ==="
 
