@@ -12,7 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `setup.sh` — universal setup script for Ubuntu 24.04 (any cloud or bare metal)
 - `config/fail2ban.conf` — Fail2ban jail configuration
 - `config/bash_aliases` — shell shortcuts for lab user
-- `docker-compose.yml` — AI platform stack (Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik)
+- `docker-compose.yml` — AI platform stack (Dify, Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik)
 - `.env.example` — environment variables template for docker-compose
 - `scripts/validate.sh` — post-setup health check
 - `examples/cloud-config.yml` — minimal cloud-init template (provider-agnostic)
+- `docs/` — detailed product setup guides (Ollama, Qdrant, Traefik, Dify, Flowise, n8n, Langfuse)
+- `docs/adr/` — architecture decision records (6 ADRs + template)
+- `config/dify-nginx.conf` — nginx routing for Dify API and web frontend

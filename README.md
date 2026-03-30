@@ -64,10 +64,11 @@ Default Ollama models pulled in background: `llama3.2`, `nomic-embed-text`.
 | [setup.sh](setup.sh) | Main setup script — run on any fresh Ubuntu 24.04 |
 | [config/fail2ban.conf](config/fail2ban.conf) | Fail2ban jail configuration |
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
-| [docker-compose.yml](docker-compose.yml) | AI platform stack (Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik) |
+| [docker-compose.yml](docker-compose.yml) | AI platform stack (Dify, Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik) |
 | [.env.example](.env.example) | Environment variables for docker-compose |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
+| [docs/](docs/) | Detailed setup guides and architecture decision records |
 
 ## AI Platform Stack (Optional)
 
@@ -82,14 +83,15 @@ docker compose up -d
 
 Services included:
 
-| Service | Subdomain | Purpose |
-|---------|-----------|---------|
-| Traefik | — | Reverse proxy with automatic TLS |
-| Flowise | `flow.<domain>` | Visual AI agent builder |
-| n8n | `n8n.<domain>` | Workflow automation |
-| Ollama | internal | Local LLM runtime |
-| Qdrant | internal | Vector database |
-| Langfuse | `trace.<domain>` | LLM observability |
+| Service | Subdomain | Purpose | Guide |
+|---------|-----------|---------|-------|
+| Traefik | — | Reverse proxy with automatic TLS | [setup](docs/setup-traefik.md) |
+| Dify | `dify.<domain>` | AI application platform | [setup](docs/setup-dify.md) |
+| Flowise | `flow.<domain>` | Visual AI agent builder | [setup](docs/setup-flowise.md) |
+| n8n | `n8n.<domain>` | Workflow automation | [setup](docs/setup-n8n.md) |
+| Ollama | internal | Local LLM runtime | [setup](docs/setup-ollama.md) |
+| Qdrant | internal | Vector database | [setup](docs/setup-qdrant.md) |
+| Langfuse | `trace.<domain>` | LLM observability | [setup](docs/setup-langfuse.md) |
 
 ## Configuration
 
