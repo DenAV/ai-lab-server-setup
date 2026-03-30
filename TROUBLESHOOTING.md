@@ -280,6 +280,46 @@ DIFY_REDIS_PASSWORD=$(openssl rand -base64 16)
 EOF
 ```
 
+### Worker cannot connect to RabbitMQ (AMQP)
+
+**Symptom:** `dify-worker` logs show repeated connection errors:
+
+```
+consumer: Cannot connect to amqp://guest:**@127.0.0.1:5672//: Connection refused.
+Trying again in 2.00 seconds...
+```
+
+**Cause:** Dify worker defaults to RabbitMQ as Celery broker, but the lab stack
+uses Redis only (no RabbitMQ container).
+
+**Fix:** The `docker-compose.yml` sets `CELERY_BROKER_URL` to Redis on both
+`dify-api` and `dify-worker`. If you see this error, ensure your compose file
+is up to date:
+
+```bash
+cd ~/ai-lab-server-setup
+git pull
+docker compose up -d --force-recreate dify-api dify-worker
+```
+
+### Database tables missing ("relation does not exist")
+
+**Symptom:** `dify-api` crashes with:
+
+```
+relation "dify_setups" does not exist
+```
+
+**Cause:** The database volume was reset but Dify didn't run migrations properly.
+
+**Fix:** Reset the Dify database and restart:
+
+```bash
+docker compose down dify-api dify-worker dify-web dify-nginx dify-db dify-redis
+docker volume rm ai-lab-server-setup_dify-db-data
+docker compose up -d dify-db dify-redis dify-api dify-worker dify-web dify-nginx
+```
+
 ## Cloud-Init
 
 ### setup.sh: Permission denied

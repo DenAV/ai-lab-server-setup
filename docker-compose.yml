@@ -235,6 +235,7 @@ services:
       - REDIS_HOST=dify-redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
+      - CELERY_BROKER_URL=redis://:${DIFY_REDIS_PASSWORD}@dify-redis:6379/1
       - STORAGE_TYPE=local
       - STORAGE_LOCAL_PATH=/app/api/storage
       - LOG_LEVEL=INFO
@@ -263,6 +264,7 @@ services:
       - REDIS_HOST=dify-redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
+      - CELERY_BROKER_URL=redis://:${DIFY_REDIS_PASSWORD}@dify-redis:6379/1
       - STORAGE_TYPE=local
       - STORAGE_LOCAL_PATH=/app/api/storage
       - LOG_LEVEL=INFO
