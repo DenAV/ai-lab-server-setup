@@ -9,6 +9,7 @@ networks:
   ai-net:
     driver: bridge
   traefik-public:
+    name: traefik-public
     driver: bridge
 
 volumes:
