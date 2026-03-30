@@ -190,9 +190,14 @@ echo "  Python venv created at ~/lab-venv"
 cp "${REPO_DIR}/config/bash_aliases" "/home/${LAB_USER}/.bash_aliases"
 chown "${LAB_USER}:${LAB_USER}" "/home/${LAB_USER}/.bash_aliases"
 
-# Clone repo to lab user home for reference
+# Ensure repo is available in lab user home
 if [ ! -d "/home/${LAB_USER}/ai-lab-server-setup" ]; then
-  su - "${LAB_USER}" -c "git clone ${REPO_URL} ~/ai-lab-server-setup" || true
+  if [ "${REPO_DIR}" != "/home/${LAB_USER}/ai-lab-server-setup" ]; then
+    su - "${LAB_USER}" -c "git clone ${REPO_URL} ~/ai-lab-server-setup" || true
+  fi
+fi
+if [ -d "/home/${LAB_USER}/ai-lab-server-setup" ]; then
+  chown -R "${LAB_USER}:${LAB_USER}" "/home/${LAB_USER}/ai-lab-server-setup"
 fi
 
 # Done marker

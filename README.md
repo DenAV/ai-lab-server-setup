@@ -32,8 +32,8 @@ Wait 3-5 minutes, then `ssh lab@<server-ip>`.
 
 ```bash
 ssh root@<server-ip>
-git clone https://github.com/DenAV/ai-lab-server-setup.git /opt/ai-lab-server-setup
-/opt/ai-lab-server-setup/setup.sh
+git clone https://github.com/DenAV/ai-lab-server-setup.git /home/lab/ai-lab-server-setup
+bash /home/lab/ai-lab-server-setup/setup.sh
 ```
 
 ### Option C: Pipe Over SSH

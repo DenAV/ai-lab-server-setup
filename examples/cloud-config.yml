@@ -29,5 +29,5 @@ packages:
   - curl
 
 runcmd:
-  - git clone https://github.com/DenAV/ai-lab-server-setup.git /opt/ai-lab-server-setup
-  - bash /opt/ai-lab-server-setup/setup.sh
+  - git clone https://github.com/DenAV/ai-lab-server-setup.git /home/lab/ai-lab-server-setup
+  - bash /home/lab/ai-lab-server-setup/setup.sh
