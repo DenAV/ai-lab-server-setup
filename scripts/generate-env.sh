@@ -64,6 +64,9 @@ LANGFUSE_DB_PASS="$(gen_password)"
 DIFY_SECRET="$(gen_secret 32)"
 DIFY_DB_PASS="$(gen_password)"
 DIFY_REDIS_PASS="$(gen_password)"
+DIFY_SANDBOX_KEY="$(gen_secret 32)"
+DIFY_PLUGIN_DAEMON_KEY="$(gen_secret 48)"
+DIFY_PLUGIN_INNER_KEY="$(gen_secret 48)"
 
 # --- Write .env ---
 cat > "${ENV_FILE}" << EOF
@@ -122,10 +125,15 @@ TRAEFIK_VERSION=v3.3
 # =============================================================================
 # Dify
 # =============================================================================
-DIFY_VERSION=0.15.3
+DIFY_VERSION=1.13.3
 DIFY_SECRET_KEY=${DIFY_SECRET}
 DIFY_DB_PASSWORD=${DIFY_DB_PASS}
 DIFY_REDIS_PASSWORD=${DIFY_REDIS_PASS}
+DIFY_SANDBOX_KEY=${DIFY_SANDBOX_KEY}
+DIFY_SANDBOX_VERSION=0.2.14
+DIFY_PLUGIN_VERSION=0.5.3-local
+DIFY_PLUGIN_DAEMON_KEY=${DIFY_PLUGIN_DAEMON_KEY}
+DIFY_PLUGIN_INNER_API_KEY=${DIFY_PLUGIN_INNER_KEY}
 EOF
 
 chmod 600 "${ENV_FILE}"

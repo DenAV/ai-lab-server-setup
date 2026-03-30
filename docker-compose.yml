@@ -22,6 +22,8 @@ volumes:
   dify-db-data:
   dify-redis-data:
   dify-storage:
+  dify-sandbox-deps:
+  dify-plugin-data:
 
 services:
   # ===========================================================================
@@ -181,7 +183,7 @@ services:
       - "traefik.http.services.langfuse.loadbalancer.server.port=3000"
 
   # ===========================================================================
-  # Dify — AI Application Platform
+  # Dify — AI Application Platform (v1.13.3)
   # ===========================================================================
   dify-db:
     image: "postgres:16-alpine"
@@ -216,6 +218,65 @@ services:
       timeout: 5s
       retries: 5
 
+  dify-sandbox:
+    image: "langgenius/dify-sandbox:${DIFY_SANDBOX_VERSION:-0.2.14}"
+    container_name: dify-sandbox
+    restart: unless-stopped
+    environment:
+      - API_KEY=${DIFY_SANDBOX_KEY}
+      - GIN_MODE=release
+      - WORKER_TIMEOUT=15
+      - ENABLE_NETWORK=true
+      - SANDBOX_PORT=8194
+    volumes:
+      - "dify-sandbox-deps:/dependencies"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8194/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  dify-plugin-daemon:
+    image: "langgenius/dify-plugin-daemon:${DIFY_PLUGIN_VERSION:-0.5.3-local}"
+    container_name: dify-plugin-daemon
+    restart: unless-stopped
+    depends_on:
+      dify-db:
+        condition: service_healthy
+      dify-redis:
+        condition: service_healthy
+    environment:
+      - DB_TYPE=postgresql
+      - DB_USERNAME=dify
+      - DB_PASSWORD=${DIFY_DB_PASSWORD}
+      - DB_HOST=dify-db
+      - DB_PORT=5432
+      - DB_DATABASE=dify_plugin
+      - SERVER_PORT=5002
+      - SERVER_KEY=${DIFY_PLUGIN_DAEMON_KEY}
+      - DIFY_INNER_API_URL=http://dify-api:5001
+      - DIFY_INNER_API_KEY=${DIFY_PLUGIN_INNER_API_KEY}
+      - PLUGIN_REMOTE_INSTALLING_HOST=0.0.0.0
+      - PLUGIN_REMOTE_INSTALLING_PORT=5003
+      - PLUGIN_WORKING_PATH=/app/storage/cwd
+      - FORCE_VERIFYING_SIGNATURE=true
+      - PYTHON_ENV_INIT_TIMEOUT=120
+      - PLUGIN_MAX_EXECUTION_TIMEOUT=600
+      - PLUGIN_STORAGE_TYPE=local
+      - PLUGIN_STORAGE_LOCAL_ROOT=/app/storage
+      - PLUGIN_INSTALLED_PATH=plugin
+      - PLUGIN_PACKAGE_CACHE_PATH=plugin_packages
+      - PLUGIN_MEDIA_CACHE_PATH=assets
+      - REDIS_HOST=dify-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
+    volumes:
+      - "dify-plugin-data:/app/storage"
+    networks:
+      - ai-net
+
   dify-api:
     image: "langgenius/dify-api:${DIFY_VERSION:-latest}"
     container_name: dify-api
@@ -225,10 +286,13 @@ services:
         condition: service_healthy
       dify-redis:
         condition: service_healthy
+      dify-sandbox:
+        condition: service_healthy
     environment:
       - MODE=api
       - SECRET_KEY=${DIFY_SECRET_KEY}
       - MIGRATION_ENABLED=true
+      - DEPLOY_ENV=PRODUCTION
       - DB_USERNAME=dify
       - DB_PASSWORD=${DIFY_DB_PASSWORD}
       - DB_HOST=dify-db
@@ -238,9 +302,18 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
       - CELERY_BROKER_URL=redis://:${DIFY_REDIS_PASSWORD}@dify-redis:6379/1
-      - STORAGE_TYPE=local
-      - STORAGE_LOCAL_PATH=/app/api/storage
+      - STORAGE_TYPE=opendal
+      - OPENDAL_SCHEME=fs
+      - OPENDAL_FS_ROOT=storage
+      - CODE_EXECUTION_ENDPOINT=http://dify-sandbox:8194
+      - CODE_EXECUTION_API_KEY=${DIFY_SANDBOX_KEY}
+      - PLUGIN_DAEMON_URL=http://dify-plugin-daemon:5002
+      - PLUGIN_DAEMON_KEY=${DIFY_PLUGIN_DAEMON_KEY}
+      - INNER_API_KEY_FOR_PLUGIN=${DIFY_PLUGIN_INNER_API_KEY}
+      - DB_PLUGIN_DATABASE=dify_plugin
       - LOG_LEVEL=INFO
+      - PLUGIN_REMOTE_INSTALL_HOST=localhost
+      - PLUGIN_REMOTE_INSTALL_PORT=5003
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
@@ -267,11 +340,43 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
       - CELERY_BROKER_URL=redis://:${DIFY_REDIS_PASSWORD}@dify-redis:6379/1
-      - STORAGE_TYPE=local
-      - STORAGE_LOCAL_PATH=/app/api/storage
+      - STORAGE_TYPE=opendal
+      - OPENDAL_SCHEME=fs
+      - OPENDAL_FS_ROOT=storage
+      - CODE_EXECUTION_ENDPOINT=http://dify-sandbox:8194
+      - CODE_EXECUTION_API_KEY=${DIFY_SANDBOX_KEY}
+      - PLUGIN_DAEMON_URL=http://dify-plugin-daemon:5002
+      - PLUGIN_DAEMON_KEY=${DIFY_PLUGIN_DAEMON_KEY}
+      - INNER_API_KEY_FOR_PLUGIN=${DIFY_PLUGIN_INNER_API_KEY}
+      - DB_PLUGIN_DATABASE=dify_plugin
       - LOG_LEVEL=INFO
     volumes:
       - "dify-storage:/app/api/storage"
+    networks:
+      - ai-net
+
+  dify-beat:
+    image: "langgenius/dify-api:${DIFY_VERSION:-latest}"
+    container_name: dify-beat
+    restart: unless-stopped
+    depends_on:
+      dify-db:
+        condition: service_healthy
+      dify-redis:
+        condition: service_healthy
+    environment:
+      - MODE=beat
+      - SECRET_KEY=${DIFY_SECRET_KEY}
+      - DB_USERNAME=dify
+      - DB_PASSWORD=${DIFY_DB_PASSWORD}
+      - DB_HOST=dify-db
+      - DB_PORT=5432
+      - DB_DATABASE=dify
+      - REDIS_HOST=dify-redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
+      - CELERY_BROKER_URL=redis://:${DIFY_REDIS_PASSWORD}@dify-redis:6379/1
+      - LOG_LEVEL=INFO
     networks:
       - ai-net
 
@@ -286,6 +391,8 @@ services:
       - APP_API_URL=https://dify.${DOMAIN}
       - CONSOLE_WEB_URL=https://dify.${DOMAIN}
       - APP_WEB_URL=https://dify.${DOMAIN}
+      - MARKETPLACE_API_URL=https://marketplace.dify.ai
+      - MARKETPLACE_URL=https://marketplace.dify.ai
     networks:
       - ai-net
 

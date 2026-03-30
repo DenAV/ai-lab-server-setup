@@ -69,7 +69,7 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   echo "Platform Stack (docker compose):"
 
   # Expected containers from docker-compose.yml
-  CONTAINERS="traefik flowise n8n ollama-compose qdrant-compose langfuse langfuse-db dify-api dify-worker dify-web dify-nginx dify-db dify-redis"
+  CONTAINERS="traefik flowise n8n ollama-compose qdrant-compose langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
 
   for container in ${CONTAINERS}; do
     check "${container}" "docker ps --format '{{.Names}}' | grep -q '^${container}$'"
