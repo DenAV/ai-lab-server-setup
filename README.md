@@ -3,8 +3,9 @@
 Universal provisioning scripts for AI/DevOps lab environments on **Ubuntu 24.04**.
 
 One script turns a fresh server into a fully configured AI lab with Docker, Ollama,
-Qdrant, Python venv, firewall, and SSH hardening. Works with any cloud provider
-or bare metal — not tied to a specific platform.
+Qdrant, Python venv, firewall, and SSH hardening. Optionally deploy a full platform
+stack — Dify, Flowise, n8n, Langfuse, and Traefik — with a single `docker compose up`.
+Works with any cloud provider or bare metal — not tied to a specific platform.
 
 ## Quick Start
 
