@@ -108,7 +108,7 @@ QDRANT_API_KEY=${QDRANT_API_KEY}
 # =============================================================================
 # Langfuse
 # =============================================================================
-LANGFUSE_VERSION=latest
+LANGFUSE_VERSION=2
 LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET}
 LANGFUSE_NEXT_AUTH_SECRET=${LANGFUSE_AUTH_SECRET}
 LANGFUSE_SALT=${LANGFUSE_SALT}

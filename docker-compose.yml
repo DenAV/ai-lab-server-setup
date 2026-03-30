@@ -153,7 +153,7 @@ services:
       retries: 5
 
   langfuse:
-    image: "langfuse/langfuse:${LANGFUSE_VERSION:-latest}"
+    image: "langfuse/langfuse:${LANGFUSE_VERSION:-2}"
     container_name: langfuse
     restart: unless-stopped
     depends_on:
