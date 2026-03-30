@@ -16,7 +16,7 @@
 users:
   - default
   - name: lab
-    groups: sudo, docker
+    groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh_authorized_keys:
@@ -30,4 +30,4 @@ packages:
 
 runcmd:
   - git clone https://github.com/DenAV/ai-lab-server-setup.git /opt/ai-lab-server-setup
-  - /opt/ai-lab-server-setup/setup.sh
+  - bash /opt/ai-lab-server-setup/setup.sh

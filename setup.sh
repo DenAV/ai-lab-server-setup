@@ -99,6 +99,10 @@ else
   echo "  User '${LAB_USER}' already exists"
 fi
 
+# Fix home directory ownership (cloud-init write_files may create /home/lab
+# as root before the users module runs)
+chown -R "${LAB_USER}:${LAB_USER}" "/home/${LAB_USER}"
+
 # --- 4. SSH hardening ---
 echo "[4/9] Hardening SSH..."
 SSHD_CONFIG="/etc/ssh/sshd_config"
