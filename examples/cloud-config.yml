@@ -1,0 +1,33 @@
+#cloud-config
+# Minimal cloud-init example for AI Lab Server Setup
+#
+# This template works with any cloud provider that supports cloud-init:
+# Hetzner Cloud, AWS EC2, Azure, GCP, DigitalOcean, etc.
+#
+# Setup:
+#   1. Copy: cp cloud-config.yml.example cloud-config.yml
+#   2. Replace REPLACE_WITH_YOUR_PUBLIC_KEY with your SSH public key
+#   3. Pass as user-data when creating the VM
+#
+# Cloud-init clones the repo and runs setup.sh automatically.
+# After provisioning (3-5 min), SSH as 'lab' user:
+#   ssh lab@<server-ip>
+
+users:
+  - default
+  - name: lab
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - REPLACE_WITH_YOUR_PUBLIC_KEY
+
+package_update: true
+
+packages:
+  - git
+  - curl
+
+runcmd:
+  - git clone https://github.com/DenAV/ai-lab-server-setup.git /opt/ai-lab-server-setup
+  - /opt/ai-lab-server-setup/setup.sh
