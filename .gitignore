@@ -1,6 +1,7 @@
 # Secrets — never commit (root level only)
 /cloud-config.yml
 /.env
+/.secrets
 *.pem
 *.key
 id_*

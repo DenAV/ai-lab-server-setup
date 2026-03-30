@@ -23,7 +23,9 @@ Point your domain and subdomains to the server:
 
 | Record | Type | Value | Service |
 |--------|------|-------|---------|
-| `ai.example.com` | A | `<server-ip>` | Base record || `dify.example.com` | CNAME | `ai.example.com` | Dify || `flow.example.com` | CNAME | `ai.example.com` | Flowise |
+| `ai.example.com` | A | `<server-ip>` | Base record |
+| `dify.example.com` | CNAME | `ai.example.com` | Dify |
+| `flow.example.com` | CNAME | `ai.example.com` | Flowise |
 | `n8n.example.com` | CNAME | `ai.example.com` | n8n |
 | `trace.example.com` | CNAME | `ai.example.com` | Langfuse |
 

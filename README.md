@@ -67,6 +67,7 @@ Default Ollama models pulled in background: `llama3.2`, `nomic-embed-text`.
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
 | [docker-compose.yml](docker-compose.yml) | AI platform stack (Dify, Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik) |
 | [.env.example](.env.example) | Environment variables for docker-compose |
+| [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
 | [docs/](docs/) | Detailed setup guides and architecture decision records |
@@ -77,9 +78,18 @@ After running `setup.sh`, deploy the full platform stack:
 
 ```bash
 cd ~/ai-lab-server-setup
-cp .env.example .env
-nano .env            # set domain, passwords, API keys
+
+# Generate .env with auto-generated secrets (only domain + email needed)
+bash scripts/generate-env.sh example.com user@example.com
+
+# Or interactively:
+bash scripts/generate-env.sh
+
+# Start all services
 docker compose up -d
+
+# View generated credentials
+cat .secrets
 ```
 
 Services included:
