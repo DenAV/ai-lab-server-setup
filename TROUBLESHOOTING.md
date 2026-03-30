@@ -269,7 +269,7 @@ WARN: The "DIFY_SECRET_KEY" variable is not set. Defaulting to a blank string.
 
 ```bash
 # Option A: Regenerate (overwrites all secrets)
-bash scripts/generate-env.sh denav.net user@example.com
+bash scripts/generate-env.sh example.com user@example.com
 
 # Option B: Add manually
 cat >> .env << 'EOF'
