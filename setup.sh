@@ -66,7 +66,7 @@ echo "============================================="
 echo ""
 
 # --- 1. System update ---
-echo "[1/9] Updating system packages..."
+echo "[1/10] Updating system packages..."
 apt-get update -qq
 apt-get upgrade -y -qq
 apt-get install -y -qq \
@@ -76,11 +76,11 @@ apt-get install -y -qq \
   apt-transport-https ca-certificates gnupg lsb-release
 
 # --- 2. Timezone ---
-echo "[2/9] Setting timezone to ${TIMEZONE}..."
+echo "[2/10] Setting timezone to ${TIMEZONE}..."
 timedatectl set-timezone "${TIMEZONE}"
 
 # --- 3. Create lab user ---
-echo "[3/9] Creating user '${LAB_USER}'..."
+echo "[3/10] Creating user '${LAB_USER}'..."
 if ! id "${LAB_USER}" &>/dev/null; then
   adduser --disabled-password --gecos "" "${LAB_USER}"
   usermod -aG sudo "${LAB_USER}"
@@ -105,7 +105,7 @@ fi
 chown -R "${LAB_USER}:${LAB_USER}" "/home/${LAB_USER}"
 
 # --- 4. SSH hardening ---
-echo "[4/9] Hardening SSH..."
+echo "[4/10] Hardening SSH..."
 SSHD_CONFIG="/etc/ssh/sshd_config"
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' "${SSHD_CONFIG}"
 sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' "${SSHD_CONFIG}"
@@ -119,7 +119,7 @@ systemctl restart ssh
 echo "  SSH hardened (root login disabled, password auth disabled)"
 
 # --- 5. Firewall ---
-echo "[5/9] Configuring firewall..."
+echo "[5/10] Configuring firewall..."
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow 22/tcp comment 'SSH'
@@ -129,7 +129,7 @@ echo "y" | ufw enable
 echo "  Firewall enabled (SSH, HTTP, HTTPS)"
 
 # --- 6. Fail2ban ---
-echo "[6/9] Configuring Fail2ban..."
+echo "[6/10] Configuring Fail2ban..."
 cp "${REPO_DIR}/config/fail2ban.conf" /etc/fail2ban/jail.local
 systemctl enable fail2ban
 systemctl restart fail2ban
