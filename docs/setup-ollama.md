@@ -53,8 +53,8 @@ ollama run llama3.2
 | `codellama` | ~4 GB | Code generation |
 | `phi3` | ~2 GB | Lightweight, fast |
 
-> On CPX22 (4 GB RAM), stick to models under 4 GB. Larger models
-> need CCX23+ (16 GB RAM).
+> On CPX32 (8 GB RAM), you can run models up to ~4 GB alongside the full
+> platform stack. Larger models need CPX42+ (16 GB RAM).
 
 ## API Usage
 

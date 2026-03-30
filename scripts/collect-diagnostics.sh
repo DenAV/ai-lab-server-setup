@@ -98,18 +98,33 @@ if [ -f "${PROJECT_DIR}/.env" ]; then
 fi
 # docker-compose.yml
 cp "${PROJECT_DIR}/docker-compose.yml" "${DIAG_DIR}/docker-compose.yml" 2>/dev/null || true
-# Traefik certs info (not the certs themselves)
-collect "traefik-certs" "docker exec traefik cat /certs/acme.json 2>/dev/null | python3 -c \"
+# Traefik certs info (not the private keys)
+collect "traefik-acme" "docker exec traefik cat /certs/acme.json 2>/dev/null | python3 -c \"
 import json, sys
 try:
     d = json.load(sys.stdin)
     for resolver, data in d.items():
         print(f'Resolver: {resolver}')
-        for cert in data.get('Certificates', []):
+        certs = data.get('Certificates', [])
+        if not certs:
+            print('  No certificates stored')
+        for cert in certs:
             domain = cert.get('domain', {})
-            print(f'  Main: {domain.get(\"main\", \"?\")}  SANs: {domain.get(\"sans\", [])}')
-except: print('No certificates or parse error')
-\" 2>/dev/null"
+            print(f'  Main: {domain.get(\\\"main\\\", \\\"?\\\")}  SANs: {domain.get(\\\"sans\\\", [])}')
+except Exception as e:
+    print(f'Parse error: {e}')
+\" 2>&1 || echo 'Could not read acme.json'"
+
+# Check actual TLS certificates on each subdomain
+DOMAIN_VAL=\$(grep '^DOMAIN=' "${PROJECT_DIR}/.env" 2>/dev/null | cut -d= -f2 || echo "")
+if [ -n "\${DOMAIN_VAL}" ]; then
+  collect "tls-certificates" "for sub in dify flow n8n trace; do
+    host=\"\${sub}.\${DOMAIN_VAL}\"
+    echo \"--- \${host} ---\"
+    echo | openssl s_client -servername \"\${host}\" -connect \"\${host}:443\" 2>/dev/null | openssl x509 -noout -subject -issuer -dates -ext subjectAltName 2>/dev/null || echo '  No TLS certificate'
+    echo
+  done"
+fi
 # Docker API version override
 collect "docker-api-override" "cat /etc/systemd/system/docker.service.d/min_api_version.conf 2>/dev/null || echo 'no override'"
 # SSH config

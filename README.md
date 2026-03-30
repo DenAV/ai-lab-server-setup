@@ -7,6 +7,23 @@ Qdrant, Python venv, firewall, and SSH hardening. Optionally deploy a full platf
 stack — Dify, Flowise, n8n, Langfuse, and Traefik — with a single `docker compose up`.
 Works with any cloud provider or bare metal — not tied to a specific platform.
 
+## System Requirements
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU | 2 vCPU | 4 vCPU |
+| RAM | 4 GB (base only) | 8 GB (full platform stack) |
+| Disk | 40 GB | 80 GB |
+| OS | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS |
+
+**Hetzner Cloud equivalents:**
+
+| Type | vCPU | RAM | Use Case |
+|------|------|-----|----------|
+| CPX22 | 2 | 4 GB | Base setup only (no Dify, no LLM models) |
+| **CPX32** | **4** | **8 GB** | **Full stack + small LLM (recommended)** |
+| CPX42 | 8 | 16 GB | Full stack + larger LLM models |
+
 ## Quick Start
 
 ### Option A: Cloud-Init (Fully Automatic)
@@ -22,7 +39,7 @@ nano cloud-config.yml  # add your SSH public key
 # Create VM (example: Hetzner Cloud)
 hcloud server create \
   --name ai-lab \
-  --type cpx22 \
+  --type cpx32 \
   --image ubuntu-24.04 \
   --user-data-from-file cloud-config.yml
 ```
