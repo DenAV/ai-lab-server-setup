@@ -1,13 +1,13 @@
 #cloud-config
-# Minimal cloud-init example for AI Lab Server Setup
+# AI Lab Server Setup — Cloud-Init Template
 #
 # This template works with any cloud provider that supports cloud-init:
 # Hetzner Cloud, AWS EC2, Azure, GCP, DigitalOcean, etc.
 #
-# Setup:
-#   1. Copy: cp cloud-config.yml.example cloud-config.yml
-#   2. Replace REPLACE_WITH_YOUR_PUBLIC_KEY with your SSH public key
-#   3. Pass as user-data when creating the VM
+# *** CUSTOMIZE BEFORE USE ***
+#   1. Replace REPLACE_WITH_YOUR_PUBLIC_KEY with your SSH public key
+#   2. (Optional) To auto-deploy the platform stack, uncomment the last
+#      two lines and set your domain + email
 #
 # Cloud-init clones the repo and runs setup.sh automatically.
 # After provisioning (3-5 min), SSH as 'lab' user:
@@ -31,3 +31,11 @@ packages:
 runcmd:
   - git clone https://github.com/DenAV/ai-lab-server-setup.git /home/lab/ai-lab-server-setup
   - bash /home/lab/ai-lab-server-setup/setup.sh
+
+  # --- Optional: auto-deploy AI platform stack ---
+  # Uncomment and set your domain + email to deploy Traefik, Dify,
+  # Flowise, n8n, and Langfuse automatically during provisioning.
+  # Requires DNS records pointing to this server (see docs/setup-traefik.md).
+  #
+  # - su - lab -c "bash ~/ai-lab-server-setup/scripts/generate-env.sh example.com user@example.com"
+  # - su - lab -c "cd ~/ai-lab-server-setup && docker compose up -d"
