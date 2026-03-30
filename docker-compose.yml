@@ -169,6 +169,7 @@ services:
       - SALT=${LANGFUSE_SALT}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
       - TELEMETRY_ENABLED=false
+      - HOSTNAME=0.0.0.0
     networks:
       - ai-net
       - traefik-public
