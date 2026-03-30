@@ -1,0 +1,5 @@
+# AI Lab shortcuts
+alias qdrant-start='docker start qdrant 2>/dev/null || docker run -d --name qdrant -p 6333:6333 -v qdrant_data:/qdrant/storage qdrant/qdrant:v1.12.1'
+alias qdrant-stop='docker stop qdrant'
+alias ollama-models='ollama list'
+alias lab-validate='~/ai-lab-server-setup/scripts/validate.sh'

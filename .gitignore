@@ -1,0 +1,19 @@
+# Secrets — never commit
+cloud-config.yml
+.env
+*.pem
+*.key
+id_*
+
+# Local notes
+notes_*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

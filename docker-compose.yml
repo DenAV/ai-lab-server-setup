@@ -1,0 +1,174 @@
+# AI Learning Platform — Docker Compose
+# Optional full-stack AI platform deployment.
+#
+# Usage:
+#   cp .env.example .env  # edit values
+#   docker compose up -d
+
+networks:
+  ai-net:
+    driver: bridge
+  traefik-public:
+    driver: bridge
+
+volumes:
+  flowise-data:
+  n8n-data:
+  ollama-data:
+  qdrant-data:
+  langfuse-db-data:
+  traefik-certs:
+
+services:
+  # ===========================================================================
+  # Traefik — Reverse Proxy with automatic TLS
+  # ===========================================================================
+  traefik:
+    image: "traefik:${TRAEFIK_VERSION:-3.2}"
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik-certs:/certs"
+    networks:
+      - traefik-public
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================================================
+  # Flowise — Visual AI Agent Builder
+  # ===========================================================================
+  flowise:
+    image: "flowiseai/flowise:${FLOWISE_VERSION:-latest}"
+    container_name: flowise
+    restart: unless-stopped
+    environment:
+      - FLOWISE_USERNAME=${FLOWISE_USERNAME}
+      - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
+      - FLOWISE_SECRETKEY_OVERWRITE=${FLOWISE_SECRETKEY_OVERWRITE}
+      - APIKEY_STORAGE_TYPE=json
+    volumes:
+      - "flowise-data:/root/.flowise"
+    networks:
+      - ai-net
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flowise.rule=Host(`flow.${DOMAIN}`)"
+      - "traefik.http.routers.flowise.entrypoints=websecure"
+      - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
+      - "traefik.http.services.flowise.loadbalancer.server.port=3000"
+
+  # ===========================================================================
+  # n8n — Workflow Automation
+  # ===========================================================================
+  n8n:
+    image: "n8nio/n8n:${N8N_VERSION:-latest}"
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_HOST=n8n.${DOMAIN}
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://n8n.${DOMAIN}/
+      - GENERIC_TIMEZONE=${TIMEZONE}
+    volumes:
+      - "n8n-data:/home/node/.n8n"
+    networks:
+      - ai-net
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`n8n.${DOMAIN}`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+  # ===========================================================================
+  # Ollama — Local LLM Runtime
+  # ===========================================================================
+  ollama:
+    image: "ollama/ollama:${OLLAMA_VERSION:-latest}"
+    container_name: ollama-compose
+    restart: unless-stopped
+    volumes:
+      - "ollama-data:/root/.ollama"
+    networks:
+      - ai-net
+
+  # ===========================================================================
+  # Qdrant — Vector Database
+  # ===========================================================================
+  qdrant:
+    image: "qdrant/qdrant:${QDRANT_VERSION:-latest}"
+    container_name: qdrant-compose
+    restart: unless-stopped
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    volumes:
+      - "qdrant-data:/qdrant/storage"
+    networks:
+      - ai-net
+
+  # ===========================================================================
+  # Langfuse — LLM Observability
+  # ===========================================================================
+  langfuse-db:
+    image: "postgres:16-alpine"
+    container_name: langfuse-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=langfuse
+      - POSTGRES_PASSWORD=${LANGFUSE_DB_PASSWORD}
+      - POSTGRES_DB=langfuse
+    volumes:
+      - "langfuse-db-data:/var/lib/postgresql/data"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  langfuse:
+    image: "langfuse/langfuse:${LANGFUSE_VERSION:-latest}"
+    container_name: langfuse
+    restart: unless-stopped
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://langfuse:${LANGFUSE_DB_PASSWORD}@langfuse-db:5432/langfuse
+      - NEXTAUTH_URL=https://trace.${DOMAIN}
+      - NEXTAUTH_SECRET=${LANGFUSE_NEXT_AUTH_SECRET}
+      - SALT=${LANGFUSE_SALT}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - TELEMETRY_ENABLED=false
+    networks:
+      - ai-net
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.langfuse.rule=Host(`trace.${DOMAIN}`)"
+      - "traefik.http.routers.langfuse.entrypoints=websecure"
+      - "traefik.http.routers.langfuse.tls.certresolver=letsencrypt"
+      - "traefik.http.services.langfuse.loadbalancer.server.port=3000"
