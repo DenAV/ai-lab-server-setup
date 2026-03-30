@@ -227,6 +227,7 @@ services:
     environment:
       - MODE=api
       - SECRET_KEY=${DIFY_SECRET_KEY}
+      - MIGRATION_ENABLED=true
       - DB_USERNAME=dify
       - DB_PASSWORD=${DIFY_DB_PASSWORD}
       - DB_HOST=dify-db
