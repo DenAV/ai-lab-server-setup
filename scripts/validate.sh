@@ -32,7 +32,7 @@ echo ""
 
 echo "System:"
 check "Ubuntu 24.04"       "grep -q '24.04' /etc/os-release"
-check "UFW active"         "ufw status | grep -q 'Status: active'"
+check "UFW active"         "sudo ufw status | grep -q 'Status: active'"
 check "Fail2ban running"   "systemctl is-active fail2ban"
 check "SSH hardened"       "grep -q 'PermitRootLogin no' /etc/ssh/sshd_config"
 
