@@ -168,3 +168,74 @@ sudo systemctl restart ollama
 | Out of memory | Use smaller models or increase RAM |
 | Slow inference | Normal on CPU — consider CCX23+ for better performance |
 | Models not downloading | Check disk space: `df -h` |
+| Docker containers can't connect | See [Connecting from Docker](#connecting-from-docker-containers) |
+
+## Connecting from Docker Containers
+
+There are two Ollama instances available in this setup:
+
+### Option A: Docker Compose Ollama (recommended)
+
+The `ollama-compose` container runs on the `ai-net` network, accessible by all
+other compose services.
+
+| Platform | Base URL |
+|----------|----------|
+| n8n | `http://ollama-compose:11434` |
+| Flowise | `http://ollama-compose:11434` |
+| Dify | `http://ollama-compose:11434` |
+
+Models must be pulled inside this container:
+
+```bash
+docker exec ollama-compose ollama pull llama3.2
+docker exec ollama-compose ollama pull nomic-embed-text
+docker exec ollama-compose ollama list
+```
+
+### Option B: Native Ollama via host network
+
+To connect Docker containers to the native (host) Ollama:
+
+1. Set Ollama to listen on all interfaces:
+
+```bash
+sudo systemctl edit ollama
+```
+
+Add:
+
+```ini
+[Service]
+Environment="OLLAMA_HOST=0.0.0.0"
+```
+
+Then restart:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+```
+
+2. Use `host.docker.internal` as the URL (requires `extra_hosts` in compose):
+
+| Platform | Base URL |
+|----------|----------|
+| n8n | `http://host.docker.internal:11434` |
+| Flowise | `http://host.docker.internal:11434` |
+| Dify | `http://host.docker.internal:11434` |
+
+> **Note:** `host.docker.internal` only works if the service has
+> `extra_hosts: ["host.docker.internal:host-gateway"]` in docker-compose.yml.
+
+### Which to use?
+
+| Criteria | Compose Ollama | Native Ollama |
+|----------|---------------|---------------|
+| Shares models with host CLI | No (separate storage) | Yes |
+| No extra config needed | Yes | No (`OLLAMA_HOST`, `extra_hosts`) |
+| Direct hardware access | Via Docker | Direct |
+| GPU passthrough | Needs `--gpus` flag | Native |
+
+For a lab environment, **Compose Ollama** is simpler. Use native Ollama if you
+need GPU access or want to share models with the host CLI.
