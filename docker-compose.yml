@@ -315,6 +315,10 @@ services:
       - SECRET_KEY=${DIFY_SECRET_KEY}
       - MIGRATION_ENABLED=true
       - DEPLOY_ENV=PRODUCTION
+      - CONSOLE_API_URL=https://dify.${DOMAIN}
+      - CONSOLE_WEB_URL=https://dify.${DOMAIN}
+      - APP_API_URL=https://dify.${DOMAIN}
+      - APP_WEB_URL=https://dify.${DOMAIN}
       - DB_USERNAME=dify
       - DB_PASSWORD=${DIFY_DB_PASSWORD}
       - DB_HOST=dify-db
