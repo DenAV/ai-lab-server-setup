@@ -340,6 +340,8 @@ services:
       - LOG_LEVEL=INFO
       - PLUGIN_REMOTE_INSTALL_HOST=localhost
       - PLUGIN_REMOTE_INSTALL_PORT=5003
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant-compose:6333
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
@@ -376,6 +378,8 @@ services:
       - INNER_API_KEY_FOR_PLUGIN=${DIFY_PLUGIN_INNER_API_KEY}
       - DB_PLUGIN_DATABASE=dify_plugin
       - LOG_LEVEL=INFO
+      - VECTOR_STORE=qdrant
+      - QDRANT_URL=http://qdrant-compose:6333
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
