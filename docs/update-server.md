@@ -75,10 +75,29 @@ This will skip already-installed components and only apply new changes.
 
 Scripts run from the repo directory — `git pull` is enough, no restart needed.
 
-### Step 4: Validate
+### Step 4: Clean Up Old Images
+
+After pulling new versions, old images remain on disk. Remove them:
+
+```bash
+docker image prune -f
+```
+
+For a deeper cleanup (unused volumes, networks, build cache):
+
+```bash
+docker system prune -f
+```
+
+> **WARNING:** Do NOT use `docker system prune --volumes` — this deletes
+> unused volumes and may destroy data from stopped containers.
+
+### Step 5: Validate
 
 ```bash
 lab-validate
+# or directly:
+~/ai-lab-server-setup/scripts/validate.sh
 ```
 
 Check that all services are running and APIs respond.
@@ -143,6 +162,10 @@ source ~/.bash_aliases
 # Dify nginx
 docker compose restart dify-nginx
 ```
+
+### Upgrading Dify (major version)
+
+See [upgrade-dify.md](upgrade-dify.md) for the full procedure.
 
 ## Safety Rules
 

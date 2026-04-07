@@ -67,7 +67,7 @@ collect "compose-config"   "cd ${PROJECT_DIR} && docker compose config --no-inte
 
 # --- Service logs (last 100 lines each) ---
 echo "[4/7] Service logs..."
-SERVICES="traefik flowise n8n langfuse langfuse-db ollama-compose qdrant-compose dify-api dify-worker dify-web dify-nginx dify-db dify-redis"
+SERVICES="traefik flowise n8n ollama-compose qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
 for svc in ${SERVICES}; do
   collect "log-${svc}" "docker logs --tail=100 ${svc} 2>&1"
 done
