@@ -56,6 +56,7 @@ All services on the `ai-net` Docker network use container names as hostnames.
 |---------|-------------|----------|------|
 | Ollama | `http://ollama-compose:11434` | HTTP / OpenAI-compatible | None |
 | Qdrant | `http://qdrant-compose:6333` | HTTP REST | `QDRANT_API_KEY` from `.env` |
+| Demo DB | `postgresql://demo:<password>@demo-db:5432/demo` | PostgreSQL | `DEMO_DB_PASSWORD` from `.env` |
 | Langfuse | `https://trace.<domain>` | HTTPS | API key (Public + Secret) |
 | n8n | `https://n8n.<domain>` | HTTPS | Account credentials |
 | Dify | `https://dify.<domain>` | HTTPS | Account credentials |

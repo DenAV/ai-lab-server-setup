@@ -24,8 +24,30 @@ volumes:
   dify-storage:
   dify-sandbox-deps:
   dify-plugin-data:
+  demo-db-data:
 
 services:
+  # ===========================================================================
+  # Demo DB — Shared PostgreSQL for demo projects
+  # ===========================================================================
+  demo-db:
+    image: "postgres:16-alpine"
+    container_name: demo-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=demo
+      - POSTGRES_PASSWORD=${DEMO_DB_PASSWORD}
+      - POSTGRES_DB=demo
+    volumes:
+      - "demo-db-data:/var/lib/postgresql/data"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ===========================================================================
   # Traefik — Reverse Proxy with automatic TLS
   # ===========================================================================

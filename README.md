@@ -122,6 +122,27 @@ Services included:
 | Ollama | internal | Local LLM runtime | [setup](docs/setup-ollama.md) |
 | Qdrant | internal | Vector database | [setup](docs/setup-qdrant.md) |
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/setup-langfuse.md) |
+| Demo DB | internal | Shared PostgreSQL for demo projects | — |
+
+## Deploying Demo Projects
+
+The lab serves as infrastructure for client demo presentations and quick
+AI agent assembly. Deploy projects like
+[reborn-ai-demo](https://github.com/DenAV/reborn-ai-demo) on top of the
+running platform stack.
+
+| Demo Project | Services Used | Guide |
+|-------------|---------------|-------|
+| reborn-ai-demo | Dify, n8n, Ollama, PostgreSQL | [deploy guide](docs/demos/reborn-ai-demo.md) |
+
+**Common requirements for demo projects:**
+
+- External API keys (OpenAI, Telegram, etc.) — configure in platform UIs, not in `.env`
+- HTTPS webhook URLs — provided by Traefik automatically
+- PostgreSQL for chat/data logging — use the shared `demo-db` container (create a database per project)
+- Dify apps and Knowledge Bases — created via Dify web UI
+
+See [docs/demos/](docs/demos/) for all deployment guides.
 
 ## Configuration
 

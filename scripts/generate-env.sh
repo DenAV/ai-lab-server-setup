@@ -48,6 +48,8 @@ gen_password() { openssl rand -base64 18 | tr -d '/+=' | head -c 16; }
 
 TIMEZONE="${TIMEZONE:-Europe/Berlin}"
 
+DEMO_DB_PASS="$(gen_password)"
+
 FLOWISE_PASSWORD="$(gen_password)"
 FLOWISE_SECRET="$(gen_secret 32)"
 
@@ -80,6 +82,11 @@ cat > "${ENV_FILE}" << EOF
 DOMAIN=${DOMAIN}
 ACME_EMAIL=${ACME_EMAIL}
 TIMEZONE=${TIMEZONE}
+
+# =============================================================================
+# Demo DB — Shared PostgreSQL for demo projects
+# =============================================================================
+DEMO_DB_PASSWORD=${DEMO_DB_PASS}
 
 # =============================================================================
 # Flowise
@@ -163,6 +170,12 @@ Password: ${N8N_PASSWORD}
 
 === Qdrant ===
 API Key:  ${QDRANT_API_KEY}
+
+=== Demo DB ===
+User:     demo
+Password: ${DEMO_DB_PASS}
+Host:     demo-db:5432
+Database: demo
 
 === Langfuse ===
 (Admin account created on first visit via web UI)
