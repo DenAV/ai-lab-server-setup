@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docs/demos/` — separate folder for demo project deployment guides
 - `docs/demos/reborn-ai-demo.md` — deployment guide for reborn-ai-demo on AI Lab
+- `docs/update-server.md` — how to apply repo changes to a running server
 - `demo-db` service in docker-compose — shared PostgreSQL for demo projects
 - `DEMO_DB_PASSWORD` in `.env.example` and `generate-env.sh`
 - "Deploying Demo Projects" section in README with project deployment workflow

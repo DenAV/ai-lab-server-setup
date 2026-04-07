@@ -26,7 +26,17 @@ together: Ollama, Qdrant, Dify, Flowise, n8n, and Langfuse. Includes
 connection matrix, per-integration setup steps, cross-platform workflows,
 and troubleshooting.
 
-## Architecture Decision Records
+## Demo Projects
+
+See [demos/](demos/) for deployment guides of client demo projects.
+
+## Operations
+
+| Guide | Description |
+|-------|-------------|
+| [Update Server](update-server.md) | Apply repo changes to a running server |
+
+## Demo Projects
 
 See [adr/](adr/) for all decisions about platform choices and configuration.
 
