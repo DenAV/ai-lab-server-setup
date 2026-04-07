@@ -342,6 +342,7 @@ services:
       - PLUGIN_REMOTE_INSTALL_PORT=5003
       - VECTOR_STORE=qdrant
       - QDRANT_URL=http://qdrant-compose:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
@@ -380,6 +381,7 @@ services:
       - LOG_LEVEL=INFO
       - VECTOR_STORE=qdrant
       - QDRANT_URL=http://qdrant-compose:6333
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
