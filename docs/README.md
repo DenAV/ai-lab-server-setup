@@ -19,6 +19,13 @@ Detailed setup and configuration guides for each component in the AI Lab stack.
 | [n8n](setup-n8n.md) | Workflow automation | `n8n.<domain>` |
 | [Langfuse](setup-langfuse.md) | LLM observability | `trace.<domain>` |
 
+## Integration Guide
+
+[Integration Guide](integration-guide.md) — How to connect all services
+together: Ollama, Qdrant, Dify, Flowise, n8n, and Langfuse. Includes
+connection matrix, per-integration setup steps, cross-platform workflows,
+and troubleshooting.
+
 ## Architecture Decision Records
 
 See [adr/](adr/) for all decisions about platform choices and configuration.
