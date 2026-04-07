@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `CONSOLE_API_URL`, `CONSOLE_WEB_URL`, `APP_API_URL`, `APP_WEB_URL` to `dify-api` in docker-compose (fixes CORS 401 errors)
+- `VECTOR_STORE=qdrant` and `QDRANT_URL` to `dify-api` and `dify-worker` in docker-compose
+- `docs/upgrade-dify.md` — storage permissions and nginx restart steps
+- Dify troubleshooting entries: CORS 401, vector store, file upload permissions, 502 after restart
 - `docs/demos/` — separate folder for demo project deployment guides
 - `docs/demos/reborn-ai-demo.md` — deployment guide for reborn-ai-demo on AI Lab
 - `docs/update-server.md` — how to apply repo changes to a running server
@@ -24,4 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `examples/cloud-config.yml` — minimal cloud-init template (provider-agnostic)
 - `docs/` — detailed product setup guides (Ollama, Qdrant, Traefik, Dify, Flowise, n8n, Langfuse)
 - `docs/adr/` — architecture decision records (6 ADRs + template)
-- `config/dify-nginx.conf` — nginx routing for Dify API and web frontend
+- `config/dify-nginx.conf` — nginx routing for Dify API and web frontend (variable-based proxy_pass for DNS re-resolution)

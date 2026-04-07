@@ -31,12 +31,13 @@ docker compose logs --tail=50 -f dify-web
 docker compose logs --tail=50 -f dify-nginx
 
 # All Dify services at once
-docker compose logs --tail=30 dify-api dify-worker dify-web dify-nginx dify-db dify-redis
+docker compose logs --tail=30 dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon
 
 # Database logs
 docker compose logs --tail=30 langfuse-db
 docker compose logs --tail=30 dify-db
 docker compose logs --tail=30 dify-redis
+docker compose logs --tail=30 demo-db
 ```
 
 ### System logs
@@ -301,6 +302,88 @@ cd ~/ai-lab-server-setup
 git pull
 docker compose up -d --force-recreate dify-api dify-worker
 ```
+
+### Blank page or 401 Unauthorized after upgrade
+
+**Symptom:** Dify loads the header bar but the content is blank, or all
+API calls return `401 (Unauthorized)` in the browser console.
+
+**Cause:** `dify-api` is missing `CONSOLE_API_URL` / `CONSOLE_WEB_URL`
+environment variables. Without them, CORS defaults to
+`http://127.0.0.1:3000`, rejecting requests from `https://dify.<domain>`.
+
+**Fix:** Ensure `dify-api` has the URL variables in `docker-compose.yml`:
+
+```yaml
+environment:
+  - CONSOLE_API_URL=https://dify.${DOMAIN}
+  - CONSOLE_WEB_URL=https://dify.${DOMAIN}
+  - APP_API_URL=https://dify.${DOMAIN}
+  - APP_WEB_URL=https://dify.${DOMAIN}
+```
+
+Then recreate:
+
+```bash
+docker compose up -d dify-api
+```
+
+Also clear browser cookies for `dify.<domain>` and log in again.
+
+### "Vector store type is not configured"
+
+**Symptom:** Dify shows "Vector store type is not configured" error
+after opening the dashboard.
+
+**Cause:** `VECTOR_STORE` and `QDRANT_URL` environment variables are
+missing from `dify-api` and `dify-worker`.
+
+**Fix:** Add to both services in `docker-compose.yml`:
+
+```yaml
+environment:
+  - VECTOR_STORE=qdrant
+  - QDRANT_URL=http://qdrant-compose:6333
+```
+
+Then recreate:
+
+```bash
+docker compose up -d dify-api dify-worker
+```
+
+### File upload fails (PermissionDenied)
+
+**Symptom:** Uploading files to Knowledge Base fails with "Upload failed".
+API logs show `opendal.exceptions.PermissionDenied`.
+
+**Cause:** The `dify-storage` volume was created by an older Dify version
+running as root. Dify 1.x runs as user `dify` (UID 1001) and cannot
+write to root-owned directories.
+
+**Fix:** Fix ownership from the host:
+
+```bash
+sudo chown -R 1001:1001 /var/lib/docker/volumes/ai-lab-server-setup_dify-storage/_data/
+```
+
+### 502 Bad Gateway after container restart
+
+**Symptom:** Dify returns 502 errors after restarting individual containers.
+Nginx logs show `connect() failed (111: Connection refused)`.
+
+**Cause:** The `dify-nginx.conf` used static `upstream` blocks that
+resolved DNS only at startup. After a container restart, the IP changes
+but nginx keeps the old cached address.
+
+**Fix:** The config now uses variable-based `proxy_pass` for runtime DNS
+re-resolution. If you still see this on an older config:
+
+```bash
+docker restart dify-nginx
+```
+
+Or update `config/dify-nginx.conf` from the repo (`git pull`).
 
 ### Database tables missing ("relation does not exist")
 

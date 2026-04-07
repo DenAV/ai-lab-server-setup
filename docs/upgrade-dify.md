@@ -99,7 +99,27 @@ are created for 1.x:
 | `dify-beat` | Celery beat scheduler |
 | `dify-nginx` | Internal routing (API + Web frontend) |
 
-### Step 5: Validate
+### Step 5: Fix Storage Permissions
+
+Dify 1.x runs as user `dify` (UID 1001). If the storage volume was
+created by an older version running as root, file uploads will fail
+with `PermissionDenied`:
+
+```bash
+# Fix ownership on the host
+sudo chown -R 1001:1001 /var/lib/docker/volumes/ai-lab-server-setup_dify-storage/_data/
+```
+
+### Step 6: Restart Nginx
+
+After upgrading, `dify-nginx` may cache old container IPs. Restart it
+to force DNS re-resolution:
+
+```bash
+docker restart dify-nginx
+```
+
+### Step 7: Validate
 
 ```bash
 # Check all containers are running
@@ -113,7 +133,7 @@ lab-validate
 docker logs dify-api --tail 30 2>&1 | grep -iE "migration|error|ready"
 ```
 
-### Step 6: Verify in Web UI
+### Step 8: Verify in Web UI
 
 1. Open `https://dify.<domain>`
 2. Log in (you may need to re-authenticate)
