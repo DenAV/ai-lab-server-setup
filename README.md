@@ -125,16 +125,11 @@ Services included:
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/setup-langfuse.md) |
 | Demo DB | internal | Shared PostgreSQL for demo projects | — |
 
-## Deploying Demo Projects
+## Deploying demo projects
 
-The lab serves as infrastructure for client demo presentations and quick
-AI agent assembly. Deploy projects like
-[reborn-ai-demo](https://github.com/DenAV/reborn-ai-demo) on top of the
-running platform stack.
-
-| Demo Project | Services Used | Guide |
-|-------------|---------------|-------|
-| reborn-ai-demo | Dify, n8n, Ollama, PostgreSQL | [deploy guide](docs/demos/reborn-ai-demo.md) |
+The lab serves as infrastructure for AI demo presentations and quick
+agent assembly. Any project that uses Dify, n8n, Ollama, or PostgreSQL can
+be deployed on top of the running platform stack.
 
 **Common requirements for demo projects:**
 
@@ -143,7 +138,9 @@ running platform stack.
 - PostgreSQL for chat/data logging — use the shared `demo-db` container (create a database per project)
 - Dify apps and Knowledge Bases — created via Dify web UI
 
-See [docs/demos/](docs/demos/) for all deployment guides.
+Each demo project should include its own deployment guide in a `deploy/`
+directory with platform-specific instructions. See
+[docs/demos/](docs/demos/) for the general deployment workflow.
 
 ## Configuration
 
