@@ -120,6 +120,9 @@ services:
       - N8N_PROTOCOL=https
       - WEBHOOK_URL=https://n8n.${DOMAIN}/
       - GENERIC_TIMEZONE=${TIMEZONE}
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
     volumes:
       - "n8n-data:/home/node/.n8n"
     networks:
