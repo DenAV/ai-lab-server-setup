@@ -412,6 +412,10 @@ services:
       - REDIS_PASSWORD=${DIFY_REDIS_PASSWORD}
       - CELERY_BROKER_URL=redis://:${DIFY_REDIS_PASSWORD}@dify-redis:6379/1
       - LOG_LEVEL=INFO
+      - ENABLE_CLEAN_MESSAGES=true
+      - WORKFLOW_LOG_CLEANUP_ENABLED=true
+      - WORKFLOW_LOG_RETENTION_DAYS=7
+      - WORKFLOW_LOG_CLEANUP_BATCH_SIZE=100
     networks:
       - ai-net
 
