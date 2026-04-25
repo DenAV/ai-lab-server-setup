@@ -123,6 +123,8 @@ services:
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
       - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+      - N8N_ENABLE_EXECUTE_COMMAND=true
+      - NODES_EXCLUDE=[]
     volumes:
       - "n8n-data:/home/node/.n8n"
     networks:
