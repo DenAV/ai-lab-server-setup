@@ -17,6 +17,7 @@ Detailed setup and configuration guides for each component in the AI Lab stack.
 | [Dify](setup-dify.md) | AI application platform | `dify.<domain>` |
 | [Flowise](setup-flowise.md) | Visual AI agent builder | `flow.<domain>` |
 | [n8n](setup-n8n.md) | Workflow automation | `n8n.<domain>` |
+| [n8n MCP](setup-n8n-mcp.md) | OpenCode MCP connection to n8n | `n8n.<domain>/mcp-server/http` |
 | [Langfuse](setup-langfuse.md) | LLM observability | `trace.<domain>` |
 
 ## Integration Guide
