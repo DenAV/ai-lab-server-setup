@@ -1,0 +1,7 @@
+services:
+  n8n:
+    build:
+      context: ./config/n8n-ffmpeg
+      args:
+        N8N_VERSION: ${N8N_VERSION:-latest}
+    image: ai-lab-n8n-ffmpeg:${N8N_VERSION:-latest}
