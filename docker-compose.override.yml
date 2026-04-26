@@ -5,3 +5,5 @@ services:
       args:
         N8N_VERSION: ${N8N_VERSION:-latest}
     image: ai-lab-n8n-ffmpeg:${N8N_VERSION:-latest}
+    volumes:
+      - /home/lab/client-conversation-analyzer-data:/data/cca
