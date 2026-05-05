@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -10,6 +11,25 @@ DATA_ROOT = Path(os.environ.get("DATA_ROOT", "/data/cca")).resolve()
 
 PRESETS = {
     "mp3-128k": ["-vn", "-codec:a", "libmp3lame", "-b:a", "128k"],
+    "mp3-128k-16k-mono": [
+        "-vn",
+        "-codec:a",
+        "libmp3lame",
+        "-b:a",
+        "128k",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+    ],
+    "segment-mp3-10min-copy": [
+        "-f",
+        "segment",
+        "-segment_time",
+        "600",
+        "-c",
+        "copy",
+    ],
     "wav-16k-mono": ["-ar", "16000", "-ac", "1", "-codec:a", "pcm_s16le"],
     "extract-audio": ["-vn", "-codec:a", "copy"],
 }
@@ -24,16 +44,26 @@ class ConvertRequest(BaseModel):
 class ConvertResponse(BaseModel):
     status: str
     output: str
+    files: list[str] = Field(default_factory=list)
 
 
 app = FastAPI(title="AI Lab FFmpeg Worker")
 
 
-def resolve_data_path(relative_path: str) -> Path:
-    candidate = (DATA_ROOT / relative_path).resolve()
+def resolve_data_path(input_path: str) -> Path:
+    path = Path(input_path)
+    candidate = path.resolve() if path.is_absolute() else (DATA_ROOT / path).resolve()
     if DATA_ROOT != candidate and DATA_ROOT not in candidate.parents:
         raise HTTPException(status_code=400, detail="Path must stay inside DATA_ROOT")
     return candidate
+
+
+def list_created_files(output_path: Path) -> list[str]:
+    if "%" in output_path.name:
+        glob_name = re.sub(r"%\d*d", "*", output_path.name)
+        return [str(path) for path in sorted(output_path.parent.glob(glob_name)) if path.is_file()]
+
+    return [str(output_path)] if output_path.is_file() else []
 
 
 @app.get("/health")
@@ -77,4 +107,8 @@ def convert(request: ConvertRequest) -> ConvertResponse:
     if result.returncode != 0:
         raise HTTPException(status_code=422, detail=result.stderr[-2000:])
 
-    return ConvertResponse(status="ok", output=request.output)
+    return ConvertResponse(
+        status="ok",
+        output=request.output,
+        files=list_created_files(output_path),
+    )

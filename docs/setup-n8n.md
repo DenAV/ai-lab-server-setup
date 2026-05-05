@@ -86,14 +86,27 @@ In n8n, add an **HTTP Request** node:
 
 ```json
 {
-  "input": "incoming/source.wav",
-  "output": "processed/source.mp3",
-  "preset": "mp3-128k"
+  "input": "{{ $('Validate Upload').first().json.input_path }}",
+  "output": "{{ $('Validate Upload').first().json.audio_path }}",
+  "preset": "mp3-128k-16k-mono"
 }
 ```
 
-Files are shared through `/data/cca`. See
+Files are shared through `/data/cca`. The worker accepts absolute paths under
+`/data/cca` or relative paths from `/data/cca`. See
 [FFmpeg Worker](setup-ffmpeg-worker.md) for supported presets and operations.
+
+To split an MP3 into 10-minute chunks, use another HTTP Request node:
+
+```json
+{
+  "input": "{{ $json.audio_path }}",
+  "output": "/data/cca/chunks/{{ $json.conversation_id }}/chunk-%03d.mp3",
+  "preset": "segment-mp3-10min-copy"
+}
+```
+
+The worker returns generated chunk paths in `files`.
 
 ## Example Workflows
 

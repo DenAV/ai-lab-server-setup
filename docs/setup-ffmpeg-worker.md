@@ -60,9 +60,9 @@ Content-Type: application/json
 
 ```json
 {
-  "input": "incoming/source.wav",
-  "output": "processed/source.mp3",
-  "preset": "mp3-128k"
+  "input": "/data/cca/incoming/source.wav",
+  "output": "/data/cca/processed/source.mp3",
+  "preset": "mp3-128k-16k-mono"
 }
 ```
 
@@ -71,12 +71,15 @@ Response:
 ```json
 {
   "status": "ok",
-  "output": "processed/source.mp3"
+  "output": "/data/cca/processed/source.mp3",
+  "files": [
+    "/data/cca/processed/source.mp3"
+  ]
 }
 ```
 
-Paths are relative to `/data/cca`. The worker rejects paths that escape this
-directory.
+Paths can be absolute paths under `/data/cca` or relative paths from `/data/cca`.
+The worker rejects paths that escape this directory.
 
 ## Presets
 
@@ -85,6 +88,8 @@ Supported presets:
 | Preset | Purpose |
 |--------|---------|
 | `mp3-128k` | Convert audio to MP3 at 128 kbps |
+| `mp3-128k-16k-mono` | Convert audio to MP3 at 128 kbps, 16 kHz, mono |
+| `segment-mp3-10min-copy` | Split MP3 into 10-minute chunks without re-encoding |
 | `wav-16k-mono` | Convert audio to 16 kHz mono WAV |
 | `extract-audio` | Extract audio stream without re-encoding |
 
@@ -112,9 +117,49 @@ Example HTTP Request body:
 
 ```json
 {
-  "input": "incoming/{{$json.fileName}}",
-  "output": "processed/{{$json.fileName}}.mp3",
-  "preset": "mp3-128k"
+  "input": "{{ $('Validate Upload').first().json.input_path }}",
+  "output": "{{ $('Validate Upload').first().json.audio_path }}",
+  "preset": "mp3-128k-16k-mono"
+}
+```
+
+### Split Audio Into Chunks
+
+This replaces an n8n Execute Command like:
+
+```bash
+mkdir -p "/data/cca/chunks/<conversation_id>" && ffmpeg -y -i "<audio_path>" -f segment -segment_time 600 -c copy "/data/cca/chunks/<conversation_id>/chunk-%03d.mp3"
+```
+
+HTTP Request node:
+
+```text
+Method: POST
+URL: http://ffmpeg-worker:8080/convert
+Body Content Type: JSON
+```
+
+Body:
+
+```json
+{
+  "input": "{{ $json.audio_path }}",
+  "output": "/data/cca/chunks/{{ $json.conversation_id }}/chunk-%03d.mp3",
+  "preset": "segment-mp3-10min-copy"
+}
+```
+
+The worker creates the output directory automatically and returns the generated
+chunk files in `files`:
+
+```json
+{
+  "status": "ok",
+  "output": "/data/cca/chunks/abc123/chunk-%03d.mp3",
+  "files": [
+    "/data/cca/chunks/abc123/chunk-000.mp3",
+    "/data/cca/chunks/abc123/chunk-001.mp3"
+  ]
 }
 ```
 
