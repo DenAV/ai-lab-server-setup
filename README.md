@@ -83,6 +83,7 @@ Default Ollama models pulled in background: `llama3.2`, `nomic-embed-text`.
 | [config/fail2ban.conf](config/fail2ban.conf) | Fail2ban jail configuration |
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
 | [docker-compose.yml](docker-compose.yml) | AI platform stack (Dify, Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik) |
+| [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
 | [.env.example](.env.example) | Environment variables for docker-compose |
 | [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
@@ -124,6 +125,18 @@ Services included:
 | Qdrant | internal | Vector database | [setup](docs/setup-qdrant.md) |
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/setup-langfuse.md) |
 | Demo DB | internal | Shared PostgreSQL for demo projects | — |
+
+Optional internal workers can be started with an extra compose file:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.workers.yml up -d --build
+```
+
+Available workers:
+
+| Service | URL | Purpose | Guide |
+|---------|-----|---------|-------|
+| ffmpeg-worker | `http://ffmpeg-worker:8080` | Audio/video conversion for n8n workflows | [setup](docs/setup-ffmpeg-worker.md) |
 
 ## Deploying demo projects
 

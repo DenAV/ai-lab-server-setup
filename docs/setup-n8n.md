@@ -67,6 +67,34 @@ Or use the **Ollama Chat Model** node (n8n AI nodes):
 3. Set API Key if configured
 4. Set Collection Name
 
+## Using FFmpeg Worker
+
+Use the optional `ffmpeg-worker` when n8n workflows need audio or video
+conversion without customizing the n8n image.
+
+Start n8n with the worker compose file:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.workers.yml up -d --build n8n ffmpeg-worker
+```
+
+In n8n, add an **HTTP Request** node:
+
+1. Method: POST
+2. URL: `http://ffmpeg-worker:8080/convert`
+3. Body (JSON):
+
+```json
+{
+  "input": "incoming/source.wav",
+  "output": "processed/source.mp3",
+  "preset": "mp3-128k"
+}
+```
+
+Files are shared through `/data/cca`. See
+[FFmpeg Worker](setup-ffmpeg-worker.md) for supported presets and operations.
+
 ## Example Workflows
 
 ### Webhook → Ollama → Response

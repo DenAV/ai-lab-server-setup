@@ -38,6 +38,7 @@ REQUIRED_FILES=(
   ".env.example"
   "setup.sh"
   "docker-compose.yml"
+  "docker-compose.workers.yml"
   "config/fail2ban.conf"
   "config/bash_aliases"
   "config/dify-nginx.conf"
@@ -100,6 +101,7 @@ echo ""
 echo "YAML syntax:"
 YAML_FILES=(
   "docker-compose.yml"
+  "docker-compose.workers.yml"
   "examples/cloud-config.yml"
 )
 
@@ -203,7 +205,7 @@ echo ""
 echo "Documentation:"
 
 # Check that all setup guides referenced in README exist
-GUIDE_LINKS=$(grep -oP 'docs/setup-\w+\.md' "${PROJECT_DIR}/README.md" | sort -u)
+GUIDE_LINKS=$(grep -oP 'docs/setup-[[:alnum:]_-]+\.md' "${PROJECT_DIR}/README.md" | sort -u)
 for guide in ${GUIDE_LINKS}; do
   if [ -f "${PROJECT_DIR}/${guide}" ]; then
     pass "${guide} exists"
