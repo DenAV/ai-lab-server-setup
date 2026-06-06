@@ -128,6 +128,52 @@ ufw allow 443/tcp comment 'HTTPS'
 echo "y" | ufw enable
 echo "  Firewall enabled (SSH, HTTP, HTTPS)"
 
+# Docker publishes ports through its own forwarding rules, which can bypass UFW.
+# Keep lab services reachable through Traefik only and block other published ports.
+cat > /usr/local/sbin/ai-lab-docker-firewall.sh <<'EOF'
+#!/bin/sh
+set -eu
+
+apply_rules() {
+  ipt="$1"
+  "$ipt" -N AI-LAB-DOCKER-FIREWALL 2>/dev/null || true
+  "$ipt" -F AI-LAB-DOCKER-FIREWALL
+  "$ipt" -C DOCKER-USER -j AI-LAB-DOCKER-FIREWALL 2>/dev/null \
+    || "$ipt" -I DOCKER-USER 1 -j AI-LAB-DOCKER-FIREWALL
+
+  "$ipt" -A AI-LAB-DOCKER-FIREWALL -m conntrack --ctstate RELATED,ESTABLISHED -j RETURN
+  "$ipt" -A AI-LAB-DOCKER-FIREWALL -i docker0 -j RETURN
+  "$ipt" -A AI-LAB-DOCKER-FIREWALL -i br+ -j RETURN
+  "$ipt" -A AI-LAB-DOCKER-FIREWALL -p tcp -m multiport --dports 80,443 -j RETURN
+  "$ipt" -A AI-LAB-DOCKER-FIREWALL -j DROP
+}
+
+apply_rules /usr/sbin/iptables
+if [ -x /usr/sbin/ip6tables ]; then
+  apply_rules /usr/sbin/ip6tables
+fi
+EOF
+chmod 755 /usr/local/sbin/ai-lab-docker-firewall.sh
+
+cat > /etc/systemd/system/ai-lab-docker-firewall.service <<'EOF'
+[Unit]
+Description=AI Lab Docker firewall rules
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ai-lab-docker-firewall.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable ai-lab-docker-firewall.service
+systemctl restart ai-lab-docker-firewall.service
+echo "  Docker firewall enabled (public container ports limited to HTTP/HTTPS)"
+
 # --- 6. Fail2ban ---
 echo "[6/10] Configuring Fail2ban..."
 cp "${REPO_DIR}/config/fail2ban.conf" /etc/fail2ban/jail.local
@@ -192,18 +238,17 @@ if [ -n "${OLLAMA_MODELS}" ]; then
   su - "${LAB_USER}" -c "nohup bash -c 'sleep 30 && ${PULL_CMD}' > /tmp/ollama-pull.log 2>&1 &"
 fi
 
-# --- 10. Qdrant + Python + shell config ---
+# --- 10. Python + shell config ---
 echo "[10/10] Setting up lab environment..."
 
-# Qdrant
-if ! docker ps -a --format '{{.Names}}' | grep -q '^qdrant$'; then
-  docker run -d --name qdrant --restart unless-stopped \
-    -p 6333:6333 -v qdrant_data:/qdrant/storage \
-    "qdrant/qdrant:${QDRANT_VERSION}"
-  echo "  Qdrant ${QDRANT_VERSION} started"
+# Qdrant is managed by docker-compose.yml. Do not start a standalone container
+# here, otherwise Docker publishes port 6333 on the public interface.
+if docker ps -a --format '{{.Names}}' | grep -q '^qdrant$'; then
+  docker stop qdrant >/dev/null 2>&1 || true
+  docker rename qdrant "qdrant-legacy-stopped-$(date +%Y%m%d%H%M%S)" >/dev/null 2>&1 || true
+  echo "  Standalone Qdrant disabled; compose-managed qdrant is used"
 else
-  docker start qdrant 2>/dev/null || true
-  echo "  Qdrant already exists"
+  echo "  Qdrant is managed by docker compose"
 fi
 
 # Python venv

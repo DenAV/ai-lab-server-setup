@@ -77,6 +77,14 @@ services:
       - "traefik-certs:/certs"
     networks:
       - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+      - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.secure-headers.headers.permissionsPolicy=geolocation=(), microphone=(), camera=()"
     security_opt:
       - no-new-privileges:true
 
@@ -102,7 +110,14 @@ services:
       - "traefik.http.routers.flowise.rule=Host(`flow.${DOMAIN}`)"
       - "traefik.http.routers.flowise.entrypoints=websecure"
       - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.flowise.middlewares=secure-headers@docker"
       - "traefik.http.services.flowise.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # ===========================================================================
   # n8n — Workflow Automation
@@ -119,6 +134,7 @@ services:
       - N8N_HOST=n8n.${DOMAIN}
       - N8N_PROTOCOL=https
       - WEBHOOK_URL=https://n8n.${DOMAIN}/
+      - N8N_PROXY_HOPS=1
       - GENERIC_TIMEZONE=${TIMEZONE}
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
@@ -135,7 +151,14 @@ services:
       - "traefik.http.routers.n8n.rule=Host(`n8n.${DOMAIN}`)"
       - "traefik.http.routers.n8n.entrypoints=websecure"
       - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.n8n.middlewares=secure-headers@docker"
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5678/healthz || wget -q --spider http://localhost:5678/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # ===========================================================================
   # Ollama — Local LLM Runtime
@@ -207,7 +230,14 @@ services:
       - "traefik.http.routers.langfuse.rule=Host(`trace.${DOMAIN}`)"
       - "traefik.http.routers.langfuse.entrypoints=websecure"
       - "traefik.http.routers.langfuse.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.langfuse.middlewares=secure-headers@docker"
       - "traefik.http.services.langfuse.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   # ===========================================================================
   # Dify — AI Application Platform (v1.13.3)
@@ -352,6 +382,12 @@ services:
       - "dify-storage:/app/api/storage"
     networks:
       - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/health', timeout=5)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   dify-worker:
     image: "langgenius/dify-api:${DIFY_VERSION:-latest}"
@@ -454,4 +490,11 @@ services:
       - "traefik.http.routers.dify.rule=Host(`dify.${DOMAIN}`)"
       - "traefik.http.routers.dify.entrypoints=websecure"
       - "traefik.http.routers.dify.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dify.middlewares=secure-headers@docker"
       - "traefik.http.services.dify.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
