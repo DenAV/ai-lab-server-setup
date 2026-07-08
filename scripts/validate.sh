@@ -14,6 +14,9 @@ set -euo pipefail
 PASS=0
 FAIL=0
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
+
 check() {
   local name="$1"
   local cmd="$2"
@@ -24,6 +27,32 @@ check() {
     echo "  [FAIL] ${name}"
     FAIL=$((FAIL + 1))
   fi
+}
+
+qdrant_container_running() {
+  docker ps --format '{{.Names}}' | grep -Eq '^(qdrant|qdrant-compose)$'
+}
+
+qdrant_api_reachable() {
+  local qdrant_api_key=""
+  local qdrant_header=()
+
+  if [ -f "${PROJECT_DIR}/.env" ]; then
+    qdrant_api_key="$(sed -n 's/^QDRANT_API_KEY=//p' "${PROJECT_DIR}/.env" | tail -n 1)"
+  fi
+
+  if [ -n "${qdrant_api_key}" ]; then
+    qdrant_header=(-H "api-key: ${qdrant_api_key}")
+  fi
+
+  curl -sf "${qdrant_header[@]}" http://localhost:6333/collections > /dev/null 2>&1 && return 0
+
+  if docker ps --format '{{.Names}}' | grep -q '^qdrant-compose$'; then
+    docker exec dify-nginx curl -sf "${qdrant_header[@]}" http://qdrant-compose:6333/collections > /dev/null 2>&1
+    return $?
+  fi
+
+  return 1
 }
 
 echo ""
@@ -40,7 +69,7 @@ echo ""
 echo "Services:"
 check "Docker running"     "systemctl is-active docker"
 check "Ollama running"     "systemctl is-active ollama"
-check "Qdrant container"   "docker ps --format '{{.Names}}' | grep -q '^qdrant$'"
+check "Qdrant container"   "qdrant_container_running"
 
 echo ""
 echo "Tools:"
@@ -52,16 +81,13 @@ check "git"                "command -v git"
 echo ""
 echo "Network:"
 check "Ollama API"         "curl -sf http://localhost:11434/api/tags > /dev/null"
-check "Qdrant API"         "curl -sf http://localhost:6333/collections > /dev/null"
+check "Qdrant API"         "qdrant_api_reachable"
 
 echo ""
 echo "Environment:"
 check "lab-venv exists"    "test -d ~/lab-venv"
 check "pip in venv"        "test -x ~/lab-venv/bin/pip"
 
-# --- Docker Compose platform stack (optional) ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
 COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yml"
 
 if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quiet 2>/dev/null | grep -q .; then
