@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- OpenClaw Gateway container, isolated network, persistent state, health check, and loopback-only access
+- Optional `local-model` Compose profile for container-only Ollama deployments
 - `CONSOLE_API_URL`, `CONSOLE_WEB_URL`, `APP_API_URL`, `APP_WEB_URL` to `dify-api` in docker-compose (fixes CORS 401 errors)
 - `VECTOR_STORE=qdrant` and `QDRANT_URL` to `dify-api` and `dify-worker` in docker-compose
 - `docs/upgrade-dify.md` — storage permissions and nginx restart steps
@@ -29,3 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/` — detailed product setup guides (Ollama, Qdrant, Traefik, Dify, Flowise, n8n, Langfuse)
 - `docs/adr/` — architecture decision records (6 ADRs + template)
 - `config/dify-nginx.conf` — nginx routing for Dify API and web frontend (variable-based proxy_pass for DNS re-resolution)
+
+### Changed
+
+- Removed native Ollama installation from `setup.sh`; local inference now uses only the optional Compose service

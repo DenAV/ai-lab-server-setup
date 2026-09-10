@@ -8,6 +8,8 @@
 networks:
   ai-net:
     driver: bridge
+  openclaw-net:
+    driver: bridge
   traefik-public:
     name: traefik-public
     driver: bridge
@@ -15,6 +17,7 @@ networks:
 volumes:
   flowise-data:
   n8n-data:
+  openclaw-data:
   ollama-data:
   qdrant-data:
   langfuse-db-data:
@@ -161,16 +164,65 @@ services:
       start_period: 30s
 
   # ===========================================================================
-  # Ollama — Local LLM Runtime
+  # OpenClaw — Personal AI Assistant Gateway
+  # ===========================================================================
+  openclaw:
+    image: "ghcr.io/openclaw/openclaw:${OPENCLAW_VERSION:-2026.9.3}"
+    container_name: openclaw
+    restart: unless-stopped
+    init: true
+    environment:
+      - HOME=/home/node
+      - OPENCLAW_HOME=/home/node
+      - OPENCLAW_STATE_DIR=/home/node/.openclaw
+      - OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+      - OPENCLAW_DISABLE_BONJOUR=1
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TZ=${TIMEZONE}
+    command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
+    volumes:
+      - "openclaw-data:/home/node/.openclaw"
+    networks:
+      - openclaw-net
+    ports:
+      - "127.0.0.1:18789:18789"
+    cap_drop:
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "node", "dist/docker-healthcheck.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ===========================================================================
+  # Ollama — Optional Local LLM Runtime
   # ===========================================================================
   ollama:
-    image: "ollama/ollama:${OLLAMA_VERSION:-latest}"
+    profiles: ["local-model"]
+    image: "ollama/ollama:${OLLAMA_VERSION:-0.34.0}"
     container_name: ollama-compose
     restart: unless-stopped
+    environment:
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_NUM_PARALLEL=1
     volumes:
       - "ollama-data:/root/.ollama"
     networks:
       - ai-net
+      - openclaw-net
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   # ===========================================================================
   # Qdrant — Vector Database

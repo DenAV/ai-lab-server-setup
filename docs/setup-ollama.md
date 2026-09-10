@@ -1,241 +1,83 @@
-# Ollama — Local LLM Inference
+# Ollama
 
 ## Overview
 
-Ollama runs local LLM models on CPU (or GPU if available). Installed natively
-on the host (not in Docker) for direct hardware access and simpler model
-management.
+Ollama is an optional Docker Compose service for hosts with enough memory for local
+inference. It is not installed natively by `setup.sh`.
 
-- **Port:** 11434 (localhost only, not exposed to internet)
-- **API:** `http://localhost:11434/v1` (OpenAI-compatible)
-- **Models dir:** `~/.ollama/models`
-- **Service:** systemd (`ollama.service`)
+- **Profile:** `local-model`
+- **Image:** `ollama/ollama:0.34.0`
+- **Internal URL:** `http://ollama-compose:11434`
+- **Models:** `ollama-data` Docker volume
+- **Host port:** not published
 
-## Installation
+The default cloud-only stack does not create or start Ollama.
 
-Ollama is installed automatically by `setup.sh`. Manual install:
+## Enable Local Models
 
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-sudo systemctl enable ollama
-sudo systemctl start ollama
-```
-
-## Model Management
+Set the profile in `.env` so subsequent Compose commands use the same mode:
 
 ```bash
-# List installed models
-ollama list
-
-# Pull a model
-ollama pull llama3.2
-ollama pull nomic-embed-text
-ollama pull mistral
-ollama pull codellama
-
-# Remove a model
-ollama rm <model-name>
-
-# Show model info
-ollama show llama3.2
-
-# Run interactive chat
-ollama run llama3.2
+COMPOSE_PROFILES=local-model
 ```
 
-### Recommended Models
-
-| Model | Size | Purpose |
-|-------|------|---------|
-| `llama3.2` | ~2 GB | General chat, reasoning |
-| `nomic-embed-text` | ~270 MB | Text embeddings for RAG |
-| `mistral` | ~4 GB | General purpose, code |
-| `codellama` | ~4 GB | Code generation |
-| `phi3` | ~2 GB | Lightweight, fast |
-
-> On CPX32 (8 GB RAM), you can run models up to ~4 GB alongside the full
-> platform stack. Larger models need CPX42+ (16 GB RAM).
-
-## API Usage
-
-### Check status
+Start the stack and pull only models that fit the host:
 
 ```bash
-curl http://localhost:11434/api/tags
+docker compose up -d
+docker compose exec ollama ollama pull llama3.2
+docker compose exec ollama ollama pull nomic-embed-text
+docker compose exec ollama ollama list
 ```
 
-### Generate completion
+Alternatively, enable the profile for one command:
 
 ```bash
-curl http://localhost:11434/api/generate -d '{
-  "model": "llama3.2",
-  "prompt": "What is Docker?",
-  "stream": false
-}'
+docker compose --profile local-model up -d
 ```
 
-### OpenAI-compatible endpoint
+Local inference competes with Dify, n8n, Flowise, and OpenClaw for memory. Do not enable
+the profile merely because the container starts; verify that the selected model fits
+without sustained swap use or out-of-memory kills.
 
-```bash
-curl http://localhost:11434/v1/chat/completions -d '{
-  "model": "llama3.2",
-  "messages": [{"role": "user", "content": "Hello"}]
-}'
-```
+## Connect Services
 
-### Embeddings
-
-```bash
-curl http://localhost:11434/api/embeddings -d '{
-  "model": "nomic-embed-text",
-  "prompt": "The quick brown fox"
-}'
-```
-
-## Python Integration
-
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    base_url="http://localhost:11434/v1",
-    api_key="unused",  # Ollama doesn't need a key
-)
-
-response = client.chat.completions.create(
-    model="llama3.2",
-    messages=[{"role": "user", "content": "Hello"}],
-)
-print(response.choices[0].message.content)
-```
-
-## Service Management
-
-```bash
-# Status
-sudo systemctl status ollama
-
-# Start / stop / restart
-sudo systemctl start ollama
-sudo systemctl stop ollama
-sudo systemctl restart ollama
-
-# View logs
-journalctl -u ollama -f
-
-# Check model download progress
-tail -f /tmp/ollama-pull.log
-```
-
-## Configuration
-
-Ollama environment variables (set in `/etc/systemd/system/ollama.service`):
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OLLAMA_HOST` | `127.0.0.1:11434` | Listen address |
-| `OLLAMA_MODELS` | `~/.ollama/models` | Models directory |
-| `OLLAMA_NUM_PARALLEL` | `1` | Concurrent requests |
-| `OLLAMA_MAX_LOADED_MODELS` | `1` | Models in memory |
-
-To change settings:
-
-```bash
-sudo systemctl edit ollama
-```
-
-Add:
-
-```ini
-[Service]
-Environment="OLLAMA_NUM_PARALLEL=2"
-Environment="OLLAMA_MAX_LOADED_MODELS=2"
-```
-
-Then reload:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart ollama
-```
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| `ollama: command not found` | Re-run install: `curl -fsSL https://ollama.com/install.sh \| sh` |
-| Service not starting | Check logs: `journalctl -u ollama -n 50` |
-| Out of memory | Use smaller models or increase RAM |
-| Slow inference | Normal on CPU — consider CCX23+ for better performance |
-| Models not downloading | Check disk space: `df -h` |
-| Docker containers can't connect | See [Connecting from Docker](#connecting-from-docker-containers) |
-
-## Connecting from Docker Containers
-
-There are two Ollama instances available in this setup:
-
-### Option A: Docker Compose Ollama (recommended)
-
-The `ollama-compose` container runs on the `ai-net` network, accessible by all
-other compose services.
+All consumers use the internal Docker hostname:
 
 | Platform | Base URL |
 |----------|----------|
+| OpenClaw | `http://ollama-compose:11434` |
 | n8n | `http://ollama-compose:11434` |
 | Flowise | `http://ollama-compose:11434` |
 | Dify | `http://ollama-compose:11434` |
 
-Models must be pulled inside this container:
+OpenClaw must use Ollama's native API URL without `/v1`. An HTTP Request node that
+deliberately uses Ollama's OpenAI-compatible endpoint may append `/v1`.
+
+## Disable Local Models
+
+Remove `local-model` from `COMPOSE_PROFILES`, then stop and remove only the container:
 
 ```bash
-docker exec ollama-compose ollama pull llama3.2
-docker exec ollama-compose ollama pull nomic-embed-text
-docker exec ollama-compose ollama list
+docker compose --profile local-model stop ollama
+docker compose --profile local-model rm -f ollama
 ```
 
-### Option B: Native Ollama via host network
-
-To connect Docker containers to the native (host) Ollama:
-
-1. Set Ollama to listen on all interfaces:
+These commands preserve `ollama-data`. Delete the volume only when model loss is
+intentional and no workflow depends on it:
 
 ```bash
-sudo systemctl edit ollama
+docker volume rm ai-lab-server-setup_ollama-data
 ```
 
-Add:
-
-```ini
-[Service]
-Environment="OLLAMA_HOST=0.0.0.0"
-```
-
-Then restart:
+## Operations
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl restart ollama
+docker compose --profile local-model ps ollama
+docker compose --profile local-model logs -f ollama
+docker compose --profile local-model exec ollama ollama ps
+docker stats ollama-compose
 ```
 
-2. Use `host.docker.internal` as the URL (requires `extra_hosts` in compose):
-
-| Platform | Base URL |
-|----------|----------|
-| n8n | `http://host.docker.internal:11434` |
-| Flowise | `http://host.docker.internal:11434` |
-| Dify | `http://host.docker.internal:11434` |
-
-> **Note:** `host.docker.internal` only works if the service has
-> `extra_hosts: ["host.docker.internal:host-gateway"]` in docker-compose.yml.
-
-### Which to use?
-
-| Criteria | Compose Ollama | Native Ollama |
-|----------|---------------|---------------|
-| Shares models with host CLI | No (separate storage) | Yes |
-| No extra config needed | Yes | No (`OLLAMA_HOST`, `extra_hosts`) |
-| Direct hardware access | Via Docker | Direct |
-| GPU passthrough | Needs `--gpus` flag | Native |
-
-For a lab environment, **Compose Ollama** is simpler. Use native Ollama if you
-need GPU access or want to share models with the host CLI.
+The base configuration is CPU-only. Add and review a host-specific Compose override
+before enabling GPU devices; do not expose port `11434` publicly.

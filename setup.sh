@@ -25,7 +25,6 @@ set -euo pipefail
 LAB_USER="${LAB_USER:-lab}"
 TIMEZONE="${TIMEZONE:-Europe/Berlin}"
 QDRANT_VERSION="${QDRANT_VERSION:-v1.12.1}"
-OLLAMA_MODELS="${OLLAMA_MODELS:-llama3.2 nomic-embed-text}"
 REPO_URL="https://github.com/DenAV/ai-lab-server-setup.git"
 
 # === Detect repo directory ===
@@ -66,7 +65,7 @@ echo "============================================="
 echo ""
 
 # --- 1. System update ---
-echo "[1/10] Updating system packages..."
+echo "[1/9] Updating system packages..."
 apt-get update -qq
 apt-get upgrade -y -qq
 apt-get install -y -qq \
@@ -76,11 +75,11 @@ apt-get install -y -qq \
   apt-transport-https ca-certificates gnupg lsb-release
 
 # --- 2. Timezone ---
-echo "[2/10] Setting timezone to ${TIMEZONE}..."
+echo "[2/9] Setting timezone to ${TIMEZONE}..."
 timedatectl set-timezone "${TIMEZONE}"
 
 # --- 3. Create lab user ---
-echo "[3/10] Creating user '${LAB_USER}'..."
+echo "[3/9] Creating user '${LAB_USER}'..."
 if ! id "${LAB_USER}" &>/dev/null; then
   adduser --disabled-password --gecos "" "${LAB_USER}"
   usermod -aG sudo "${LAB_USER}"
@@ -105,7 +104,7 @@ fi
 chown -R "${LAB_USER}:${LAB_USER}" "/home/${LAB_USER}"
 
 # --- 4. SSH hardening ---
-echo "[4/10] Hardening SSH..."
+echo "[4/9] Hardening SSH..."
 SSHD_CONFIG="/etc/ssh/sshd_config"
 sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' "${SSHD_CONFIG}"
 sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' "${SSHD_CONFIG}"
@@ -119,7 +118,7 @@ systemctl restart ssh
 echo "  SSH hardened (root login disabled, password auth disabled)"
 
 # --- 5. Firewall ---
-echo "[5/10] Configuring firewall..."
+echo "[5/9] Configuring firewall..."
 ufw default deny incoming
 ufw default allow outgoing
 ufw allow 22/tcp comment 'SSH'
@@ -175,14 +174,14 @@ systemctl restart ai-lab-docker-firewall.service
 echo "  Docker firewall enabled (public container ports limited to HTTP/HTTPS)"
 
 # --- 6. Fail2ban ---
-echo "[6/10] Configuring Fail2ban..."
+echo "[6/9] Configuring Fail2ban..."
 cp "${REPO_DIR}/config/fail2ban.conf" /etc/fail2ban/jail.local
 systemctl enable fail2ban
 systemctl restart fail2ban
 echo "  Fail2ban active"
 
 # --- 7. Swap ---
-echo "[7/10] Configuring swap..."
+echo "[7/9] Configuring swap..."
 SWAP_SIZE="${SWAP_SIZE:-4G}"
 if [ ! -f /swapfile ]; then
   fallocate -l "${SWAP_SIZE}" /swapfile
@@ -196,7 +195,7 @@ else
 fi
 
 # --- 8. Docker ---
-echo "[8/10] Installing Docker..."
+echo "[8/9] Installing Docker..."
 if ! command -v docker &>/dev/null; then
   curl -fsSL https://get.docker.com | sh
   systemctl enable docker
@@ -217,29 +216,8 @@ if ! grep -q "DOCKER_MIN_API_VERSION" /etc/systemd/system/docker.service.d/min_a
   echo "  Docker API version fix applied"
 fi
 
-# --- 9. Ollama ---
-echo "[9/10] Installing Ollama..."
-if ! command -v ollama &>/dev/null; then
-  curl -fsSL https://ollama.com/install.sh | sh
-  systemctl enable ollama
-  echo "  Ollama installed"
-else
-  echo "  Ollama already installed"
-fi
-
-# Pull models in background
-if [ -n "${OLLAMA_MODELS}" ]; then
-  echo "  Pulling models in background: ${OLLAMA_MODELS}"
-  PULL_CMD=""
-  for model in ${OLLAMA_MODELS}; do
-    PULL_CMD="${PULL_CMD} && ollama pull ${model}"
-  done
-  PULL_CMD="${PULL_CMD# && }"
-  su - "${LAB_USER}" -c "nohup bash -c 'sleep 30 && ${PULL_CMD}' > /tmp/ollama-pull.log 2>&1 &"
-fi
-
-# --- 10. Python + shell config ---
-echo "[10/10] Setting up lab environment..."
+# --- 9. Python + shell config ---
+echo "[9/9] Setting up lab environment..."
 
 # Qdrant is managed by docker-compose.yml. Do not start a standalone container
 # here, otherwise Docker publishes port 6333 on the public interface.
@@ -288,9 +266,6 @@ echo "Optional — deploy AI platform stack:"
 echo "  cd ~/ai-lab-server-setup"
 echo "  cp .env.example .env && nano .env"
 echo "  docker compose up -d"
-echo ""
-echo "Ollama models are downloading in background."
-echo "Check progress:  tail -f /tmp/ollama-pull.log"
 echo ""
 echo "WARNING: Root SSH access is now disabled."
 echo "Make sure you can login as '${LAB_USER}' before closing this session!"

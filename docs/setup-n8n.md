@@ -168,7 +168,7 @@ docker compose start n8n
 
 | Issue | Solution |
 |-------|----------|
-| Can't connect to Ollama | Use `http://ollama-compose:11434`, not `localhost` |
+| Can't connect to Ollama | Enable the `local-model` profile and use `http://ollama-compose:11434` |
 | Webhook not reachable | Check `WEBHOOK_URL` in `.env` matches your domain |
 | Credentials lost after restart | `N8N_ENCRYPTION_KEY` must not change |
 | 502 Bad Gateway | Check container: `docker compose ps n8n` |

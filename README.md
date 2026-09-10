@@ -2,9 +2,9 @@
 
 Universal provisioning scripts for AI/DevOps lab environments on **Ubuntu 24.04**.
 
-One script turns a fresh server into a fully configured AI lab with Docker, Ollama,
+One script turns a fresh server into a fully configured AI lab with Docker,
 Qdrant, Python venv, firewall, and SSH hardening. Optionally deploy a full platform
-stack — Dify, Flowise, n8n, Langfuse, and Traefik — with a single `docker compose up`.
+stack — Dify, Flowise, n8n, OpenClaw, Langfuse, and Traefik — with a single `docker compose up`.
 Works with any cloud provider or bare metal — not tied to a specific platform.
 
 ## System Requirements
@@ -20,8 +20,8 @@ Works with any cloud provider or bare metal — not tied to a specific platform.
 
 | Type | vCPU | RAM | Use Case |
 |------|------|-----|----------|
-| CPX22 | 2 | 4 GB | Base setup only (no Dify, no LLM models) |
-| **CPX32** | **4** | **8 GB** | **Full stack + small LLM (recommended)** |
+| CPX22 | 2 | 4 GB | Base setup only (no Dify, no local models) |
+| **CPX32** | **4** | **8 GB** | **Full stack with cloud models (recommended)** |
 | CPX42 | 8 | 16 GB | Full stack + larger LLM models |
 
 ## Quick Start
@@ -67,13 +67,10 @@ The script auto-clones the repo for config files if not running from a local cop
 | Component | Version | Purpose |
 |-----------|---------|---------|
 | Docker Engine | latest | Container runtime |
-| Ollama | latest | Local LLM inference |
 | Qdrant | v1.12.1 | Vector database |
 | Python 3.12 | system | Python environment with venv |
 | UFW | system | Firewall (SSH, HTTP, HTTPS) |
 | Fail2ban | system | Brute-force protection |
-
-Default Ollama models pulled in background: `llama3.2`, `nomic-embed-text`.
 
 ## Files
 
@@ -82,7 +79,7 @@ Default Ollama models pulled in background: `llama3.2`, `nomic-embed-text`.
 | [setup.sh](setup.sh) | Main setup script — run on any fresh Ubuntu 24.04 |
 | [config/fail2ban.conf](config/fail2ban.conf) | Fail2ban jail configuration |
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
-| [docker-compose.yml](docker-compose.yml) | AI platform stack (Dify, Flowise, n8n, Ollama, Qdrant, Langfuse, Traefik) |
+| [docker-compose.yml](docker-compose.yml) | AI platform stack with optional Ollama profile |
 | [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
 | [.env.example](.env.example) | Environment variables for docker-compose |
 | [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
@@ -106,7 +103,7 @@ bash scripts/generate-env.sh example.com user@example.com
 # Or interactively:
 bash scripts/generate-env.sh
 
-# Start all services
+# Start the cloud-model stack
 docker compose up -d
 
 # View generated credentials
@@ -121,7 +118,8 @@ Services included:
 | Dify | `dify.<domain>` | AI application platform | [setup](docs/setup-dify.md) |
 | Flowise | `flow.<domain>` | Visual AI agent builder | [setup](docs/setup-flowise.md) |
 | n8n | `n8n.<domain>` | Workflow automation | [setup](docs/setup-n8n.md) |
-| Ollama | internal | Local LLM runtime | [setup](docs/setup-ollama.md) |
+| OpenClaw | SSH tunnel only | Personal AI assistant | [setup](docs/setup-openclaw.md) |
+| Ollama | optional internal service | Local LLM runtime (`local-model` profile) | [setup](docs/setup-ollama.md) |
 | Qdrant | internal | Vector database | [setup](docs/setup-qdrant.md) |
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/setup-langfuse.md) |
 | Demo DB | internal | Shared PostgreSQL for demo projects | — |
@@ -157,13 +155,12 @@ directory with platform-specific instructions. See
 
 ## Configuration
 
-Override defaults via environment variables before running `setup.sh`:
+Override host provisioning defaults via environment variables before running `setup.sh`:
 
 ```bash
 export LAB_USER="myuser"
 export TIMEZONE="America/New_York"
 export QDRANT_VERSION="v1.13.0"
-export OLLAMA_MODELS="llama3.2 mistral nomic-embed-text"
 ./setup.sh
 ```
 
@@ -172,7 +169,13 @@ export OLLAMA_MODELS="llama3.2 mistral nomic-embed-text"
 | `LAB_USER` | `lab` | Non-root user to create |
 | `TIMEZONE` | `Europe/Berlin` | Server timezone |
 | `QDRANT_VERSION` | `v1.12.1` | Qdrant Docker image tag |
-| `OLLAMA_MODELS` | `llama3.2 nomic-embed-text` | Models to pull (space-separated) |
+
+Select the model mode in `.env`:
+
+| Mode | Setting | Start command |
+|------|---------|---------------|
+| Cloud only | `COMPOSE_PROFILES=` | `docker compose up -d` |
+| Local model | `COMPOSE_PROFILES=local-model` | `docker compose up -d` |
 
 ## Validation
 
