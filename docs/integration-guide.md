@@ -54,7 +54,7 @@ All services on the `ai-net` Docker network use container names as hostnames.
 
 | Service | Internal URL | Protocol | Auth |
 |---------|-------------|----------|------|
-| Ollama | `http://ollama-compose:11434` | HTTP / OpenAI-compatible | None |
+| Ollama | `http://ollama-compose:11434` | HTTP / native and OpenAI-compatible | None |
 | Qdrant | `http://qdrant-compose:6333` | HTTP REST | `QDRANT_API_KEY` from `.env` |
 | Demo DB | `postgresql://demo:<password>@demo-db:5432/demo` | PostgreSQL | `DEMO_DB_PASSWORD` from `.env` |
 | Langfuse | `https://trace.<domain>` | HTTPS | API key (Public + Secret) |
@@ -62,9 +62,8 @@ All services on the `ai-net` Docker network use container names as hostnames.
 | Dify | `https://dify.<domain>` | HTTPS | Account credentials |
 | Flowise | `https://flow.<domain>` | HTTPS | `FLOWISE_USERNAME` / `FLOWISE_PASSWORD` |
 
-> **Note:** Ollama installed natively (by `setup.sh`) is reachable at
-> `http://host.docker.internal:11434` from inside Docker containers.
-> When Ollama runs in Docker Compose, use `http://ollama-compose:11434`.
+> **Note:** Ollama is optional. Set `COMPOSE_PROFILES=local-model` before using
+> the internal endpoint.
 
 ## Integration Matrix
 
@@ -87,10 +86,10 @@ Pull these models before using integrations:
 
 ```bash
 # Chat / reasoning model
-ollama pull llama3.2
+docker compose exec ollama ollama pull llama3.2
 
 # Embedding model (required for RAG)
-ollama pull nomic-embed-text
+docker compose exec ollama ollama pull nomic-embed-text
 ```
 
 ### Connect from n8n
@@ -123,8 +122,7 @@ ollama pull nomic-embed-text
    - Base URL: `http://ollama-compose:11434`
 3. For embeddings, add `nomic-embed-text` the same way
 
-> If Ollama is installed natively (not in Docker Compose), use
-> `http://host.docker.internal:11434` instead.
+> Enable the `local-model` profile as described in [setup-ollama.md](setup-ollama.md).
 
 ### Connect from Flowise
 
@@ -319,7 +317,7 @@ Document Loader → Recursive Text Splitter
 
 | Problem | Cause | Fix |
 |---------|-------|-----|
-| `ECONNREFUSED` to Ollama | Wrong host | Use `ollama-compose:11434` (compose) or `host.docker.internal:11434` (native) |
+| `ECONNREFUSED` to Ollama | Profile disabled or wrong host | Enable `local-model` and use `ollama-compose:11434` |
 | `ECONNREFUSED` to Qdrant | Wrong host | Use `qdrant-compose:6333` |
 | `401 Unauthorized` on Qdrant | Missing API key | Add `QDRANT_API_KEY` from `.env` to credential settings |
 | Embedding dimension mismatch | Mixed models | Use the same embedding model for insert and search |

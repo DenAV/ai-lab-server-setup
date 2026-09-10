@@ -56,6 +56,8 @@ FLOWISE_SECRET="$(gen_secret 32)"
 N8N_PASSWORD="$(gen_password)"
 N8N_ENCRYPTION_KEY="$(gen_secret 32)"
 
+OPENCLAW_GATEWAY_TOKEN="$(gen_secret 48)"
+
 QDRANT_API_KEY="$(gen_secret 32)"
 
 LANGFUSE_SECRET="$(gen_secret 32)"
@@ -105,9 +107,13 @@ N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
 N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
 
 # =============================================================================
-# Ollama
+# OpenClaw
 # =============================================================================
-OLLAMA_VERSION=latest
+OPENCLAW_VERSION=2026.9.3
+OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+OPENAI_API_KEY=
+COMPOSE_PROFILES=
+OLLAMA_VERSION=0.34.0
 
 # =============================================================================
 # Qdrant
@@ -159,6 +165,7 @@ Dify:     https://dify.${DOMAIN}
 Flowise:  https://flow.${DOMAIN}
 n8n:      https://n8n.${DOMAIN}
 Langfuse: https://trace.${DOMAIN}
+OpenClaw: http://127.0.0.1:18789 (SSH tunnel required)
 
 === Flowise ===
 Username: admin
@@ -167,6 +174,9 @@ Password: ${FLOWISE_PASSWORD}
 === n8n ===
 Username: admin
 Password: ${N8N_PASSWORD}
+
+=== OpenClaw ===
+Gateway Token: ${OPENCLAW_GATEWAY_TOKEN}
 
 === Qdrant ===
 API Key:  ${QDRANT_API_KEY}

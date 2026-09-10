@@ -32,8 +32,9 @@
 - `setup.sh` disables root SSH login and password auth, then restarts `ssh` because Ubuntu 24.04 uses `ssh.service`, not `sshd.service`.
 - Docker 29+ and Traefik need the `DOCKER_MIN_API_VERSION=1.24` systemd override; both `setup.sh` and `TROUBLESHOOTING.md` document this.
 - `traefik-public` is explicitly named in compose; changing that network name causes Traefik routing failures.
-- Compose container names include `qdrant-compose` and `ollama-compose`, while some older aliases/live validation still reference standalone `qdrant`; verify actual `docker compose ps` before changing Qdrant logic.
-- Ollama is installed natively by `setup.sh`, but `docker-compose.yml` also defines an optional `ollama-compose` container; docs mention `host.docker.internal` for native Ollama from Docker services.
+- The Qdrant Compose container is named `qdrant-compose`, while some older aliases/live validation still reference standalone `qdrant`; verify actual `docker compose ps` before changing Qdrant logic.
+- Ollama is container-only and guarded by the `local-model` Compose profile; the default cloud-model stack must not start it.
+- OpenClaw publishes its Gateway only on host loopback port `18789`; access it through an SSH tunnel and never mount the Docker socket without an explicit sandbox design review.
 - Optional `ffmpeg-worker` mounts `/home/lab/client-conversation-analyzer-data` and limits file access through `N8N_RESTRICT_FILE_ACCESS_TO=/data/cca`.
 
 ## Style

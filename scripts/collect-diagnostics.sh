@@ -67,13 +67,12 @@ collect "compose-config"   "cd ${PROJECT_DIR} && docker compose config --no-inte
 
 # --- Service logs (last 100 lines each) ---
 echo "[4/7] Service logs..."
-SERVICES="traefik flowise n8n ollama-compose qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
+SERVICES="traefik flowise n8n openclaw ollama-compose qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
 for svc in ${SERVICES}; do
   collect "log-${svc}" "docker logs --tail=100 ${svc} 2>&1"
 done
 
 # Native services
-collect "log-ollama-systemd"  "sudo journalctl -u ollama --since '2 hours ago' --no-pager 2>/dev/null"
 collect "log-docker-systemd"  "sudo journalctl -u docker --since '2 hours ago' --no-pager 2>/dev/null"
 collect "log-ssh-systemd"     "sudo journalctl -u ssh --since '2 hours ago' --no-pager 2>/dev/null"
 collect "log-fail2ban"        "sudo journalctl -u fail2ban --since '2 hours ago' --no-pager 2>/dev/null"
