@@ -2,11 +2,12 @@
 
 Detailed setup and configuration guides for each component in the AI Lab stack.
 
-## Base Components (installed by setup.sh)
+## AI Services
 
 | Guide | Component | Port |
 |-------|-----------|------|
-| [Ollama](setup-ollama.md) | Local LLM inference | 11434 |
+| [Ollama](setup-ollama.md) | Optional local LLM inference | internal |
+| [OpenClaw](setup-openclaw.md) | Personal AI assistant | 18789 (loopback) |
 | [Qdrant](setup-qdrant.md) | Vector database | 6333 |
 
 ## Platform Stack (optional, via docker-compose)
@@ -46,7 +47,7 @@ See [adr/](adr/) for all decisions about platform choices and configuration.
 | ADR | Decision |
 |-----|----------|
 | [ADR-0001](adr/0001-traefik-reverse-proxy.md) | Use Traefik as reverse proxy |
-| [ADR-0002](adr/0002-ollama-native-install.md) | Install Ollama natively, not in Docker |
+| [ADR-0002](adr/0002-ollama-compose-profile.md) | Run Ollama as an optional Compose service |
 | [ADR-0003](adr/0003-qdrant-standalone-container.md) | Run Qdrant as standalone container |
 | [ADR-0004](adr/0004-langfuse-for-observability.md) | Use Langfuse for LLM observability |
 | [ADR-0005](adr/0005-ubuntu-2404-base.md) | Ubuntu 24.04 as base OS |

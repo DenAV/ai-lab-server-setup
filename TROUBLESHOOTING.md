@@ -11,7 +11,7 @@ Common issues and solutions for AI Lab Server Setup.
 docker compose ps
 
 # System services
-systemctl status docker ollama ssh ufw fail2ban
+systemctl status docker ssh ufw fail2ban
 ```
 
 ### Service logs
@@ -24,6 +24,7 @@ docker compose logs
 docker compose logs --tail=50 -f traefik
 docker compose logs --tail=50 -f flowise
 docker compose logs --tail=50 -f n8n
+docker compose --profile local-model logs --tail=50 -f ollama
 docker compose logs --tail=50 -f langfuse
 docker compose logs --tail=50 -f dify-api
 docker compose logs --tail=50 -f dify-worker
@@ -46,9 +47,6 @@ docker compose logs --tail=30 demo-db
 # Docker daemon
 sudo journalctl -u docker --since "1 hour ago" --no-pager
 
-# Ollama (native)
-sudo journalctl -u ollama --since "1 hour ago" --no-pager
-
 # SSH
 sudo journalctl -u ssh --since "1 hour ago" --no-pager
 
@@ -65,7 +63,7 @@ docker network ls
 docker network inspect traefik-public --format '{{range .Containers}}{{.Name}} {{end}}'
 
 # Port bindings
-sudo ss -tlnp | grep -E '80|443|11434|6333'
+sudo ss -tlnp | grep -E '80|443|6333|18789'
 
 # Firewall rules
 sudo ufw status verbose

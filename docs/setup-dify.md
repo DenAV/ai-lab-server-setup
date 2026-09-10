@@ -66,20 +66,10 @@ Dify can use Ollama as a model provider for local LLM inference.
 1. Go to **Settings → Model Providers → Ollama**
 2. Add a new model:
    - **Model Name:** `llama3.2`
-   - **Base URL:** `http://ollama-compose:11434` (Docker Compose)
-   - Or `http://host.docker.internal:11434` (native Ollama on host)
+   - **Base URL:** `http://ollama-compose:11434`
 3. Click **Save**
 
-> If Ollama is installed natively (via `setup.sh`), use `host.docker.internal`
-> since Dify runs in Docker but Ollama runs on the host.
-
-For native Ollama, ensure it listens on all interfaces:
-
-```bash
-sudo systemctl edit ollama
-# Add: Environment="OLLAMA_HOST=0.0.0.0"
-sudo systemctl restart ollama
-```
+> Enable the `local-model` Compose profile before configuring the provider.
 
 ## Connect to Qdrant
 
@@ -210,7 +200,7 @@ docker compose start dify-api dify-worker dify-web dify-nginx
 | Issue | Solution |
 |-------|----------|
 | Setup wizard not loading | Check all 5 containers: `docker compose ps \| grep dify` |
-| "Connection refused" to Ollama | Use `host.docker.internal:11434` for native Ollama |
+| "Connection refused" to Ollama | Enable `local-model` and use `ollama-compose:11434` |
 | Slow document processing | Check dify-worker logs: `docker compose logs dify-worker` |
 | 502 error via Traefik | Verify dify-nginx is on `traefik-public` network |
 | Database connection error | Check dify-db health: `docker compose ps dify-db` |

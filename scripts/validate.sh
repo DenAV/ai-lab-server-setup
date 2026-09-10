@@ -55,6 +55,19 @@ qdrant_api_reachable() {
   return 1
 }
 
+local_model_enabled() {
+  local profiles="${COMPOSE_PROFILES:-}"
+
+  if [ -z "${profiles}" ] && [ -f "${PROJECT_DIR}/.env" ]; then
+    profiles="$(sed -n 's/^COMPOSE_PROFILES=//p' "${PROJECT_DIR}/.env" | tail -n 1)"
+  fi
+
+  case ",${profiles// /}," in
+    *,local-model,*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 echo ""
 echo "=== AI Lab — Setup Validation ==="
 echo ""
@@ -68,19 +81,16 @@ check "SSH hardened"       "grep -q 'PermitRootLogin no' /etc/ssh/sshd_config"
 echo ""
 echo "Services:"
 check "Docker running"     "systemctl is-active docker"
-check "Ollama running"     "systemctl is-active ollama"
 check "Qdrant container"   "qdrant_container_running"
 
 echo ""
 echo "Tools:"
 check "docker CLI"         "command -v docker"
-check "ollama CLI"         "command -v ollama"
 check "python3"            "command -v python3"
 check "git"                "command -v git"
 
 echo ""
 echo "Network:"
-check "Ollama API"         "curl -sf http://localhost:11434/api/tags > /dev/null"
 check "Qdrant API"         "qdrant_api_reachable"
 
 echo ""
@@ -95,7 +105,10 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   echo "Platform Stack (docker compose):"
 
   # Expected containers from docker-compose.yml
-  CONTAINERS="traefik flowise n8n ollama-compose qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
+  CONTAINERS="traefik flowise n8n openclaw qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
+  if local_model_enabled; then
+    CONTAINERS="${CONTAINERS} ollama-compose"
+  fi
 
   for container in ${CONTAINERS}; do
     check "${container}" "docker ps --format '{{.Names}}' | grep -q '^${container}$'"
@@ -108,6 +121,10 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   check "n8n API"             "docker exec n8n node -e \"require('http').get('http://localhost:5678/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null"
   check "Langfuse API"        "docker exec langfuse node -e \"require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null || docker exec traefik wget -q --spider http://langfuse:3000 2>/dev/null"
   check "Dify API"            "docker exec dify-nginx curl -sf http://localhost:80 > /dev/null 2>&1 || docker exec dify-nginx wget -q --spider http://localhost:80 2>/dev/null"
+  check "OpenClaw API"        "curl -sf http://127.0.0.1:18789/healthz > /dev/null"
+  if local_model_enabled; then
+    check "Ollama API"        "docker exec ollama-compose ollama list"
+  fi
 fi
 
 echo ""

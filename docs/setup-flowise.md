@@ -39,11 +39,11 @@ openssl rand -base64 16  # for FLOWISE_PASSWORD
 ## Connecting to Ollama
 
 1. In Flowise, add a **ChatOllama** node
-2. Set Base URL: `http://ollama-compose:11434` (Docker network)
+2. Set Base URL: `http://ollama-compose:11434`
 3. Select model: `llama3.2`
 
-> Use `ollama-compose` (container name), not `localhost` — Flowise runs
-> inside Docker and needs the container network name.
+> Enable the `local-model` profile first. `localhost` inside Flowise refers to
+> the Flowise container, not Ollama.
 
 ## Connecting to Qdrant
 
@@ -100,7 +100,7 @@ docker compose start flowise
 
 | Issue | Solution |
 |-------|----------|
-| Can't connect to Ollama | Use `http://ollama-compose:11434`, not `localhost` |
+| Can't connect to Ollama | Enable the `local-model` profile and use `http://ollama-compose:11434` |
 | Can't connect to Qdrant | Use `http://qdrant-compose:6333`, not `localhost` |
 | 502 Bad Gateway | Check container: `docker compose ps flowise` |
 | Login fails | Verify credentials in `.env`, restart: `docker compose restart flowise` |

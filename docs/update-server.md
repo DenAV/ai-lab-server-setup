@@ -136,12 +136,12 @@ docker compose up -d         # restart updated services
 
 ### Updating Ollama models
 
-Ollama runs natively — not managed by docker-compose:
+On hosts with `COMPOSE_PROFILES=local-model`, update models inside the container:
 
 ```bash
-ollama pull llama3.2         # updates to latest version
-ollama pull nomic-embed-text
-ollama list                  # verify
+docker compose exec ollama ollama pull llama3.2
+docker compose exec ollama ollama pull nomic-embed-text
+docker compose exec ollama ollama list
 ```
 
 ### Updating config files (fail2ban, nginx, aliases)
