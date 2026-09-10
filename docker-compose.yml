@@ -178,7 +178,6 @@ services:
       - OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
       - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
       - OPENCLAW_DISABLE_BONJOUR=1
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - TZ=${TIMEZONE}
     command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
     volumes:

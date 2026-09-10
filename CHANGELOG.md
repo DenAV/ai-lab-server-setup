@@ -35,3 +35,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Removed native Ollama installation from `setup.sh`; local inference now uses only the optional Compose service
+- OpenClaw provider credentials are stored through interactive ChatGPT OAuth and OpenCode Go auth instead of Compose environment variables

@@ -21,19 +21,49 @@ ssh -L 18789:127.0.0.1:18789 lab@server.example.com
 
 Then open `http://127.0.0.1:18789/` and enter the Gateway token.
 
-## OpenAI Configuration
+## ChatGPT Subscription
 
-Set `OPENAI_API_KEY` directly in the server `.env`; never commit or paste the key into
-documentation or chat. Initialize OpenClaw after the key is present:
+Use ChatGPT/Codex OAuth for the primary model. This uses subscription quota and does not
+require an OpenAI Platform API key:
 
 ```bash
-docker compose run -T --rm --no-deps --entrypoint node openclaw \
-  dist/index.js onboard --non-interactive --accept-risk --skip-health \
-  --mode local --auth-choice openai-api-key --secret-input-mode ref \
-  --gateway-auth token --gateway-token-ref-env OPENCLAW_GATEWAY_TOKEN \
-  --skip-channels --no-install-daemon
-docker compose up -d openclaw
+docker compose exec openclaw node dist/index.js models auth login \
+  --provider openai --set-default
 ```
+
+The command requires an interactive terminal. On a headless server, open the displayed
+authorization URL locally and paste the final redirect URL back into the SSH session.
+OAuth credentials are stored in the `openclaw-data` volume.
+
+Verify the account and canonical subscription-backed model route:
+
+```bash
+docker compose exec openclaw node dist/index.js models auth list --provider openai
+docker compose exec openclaw node dist/index.js models set openai/gpt-5.6-sol
+```
+
+## OpenCode Go Fallback
+
+OpenCode Go uses its own API key and paid subscription. Store the key interactively in
+OpenClaw rather than in `.env` or Compose:
+
+```bash
+docker compose exec openclaw node dist/index.js models auth paste-api-key \
+  --provider opencode-go
+docker compose exec openclaw node dist/index.js models list --provider opencode-go
+```
+
+Choose a model from the live account catalog, then add it as a fallback. For example:
+
+```bash
+docker compose exec openclaw node dist/index.js models fallbacks add \
+  opencode-go/kimi-k3
+docker compose exec openclaw node dist/index.js models fallbacks list
+```
+
+OpenCode Go provides model inference for supported coding-agent traffic. It is not a
+general replacement for OpenAI Platform endpoints such as embeddings, speech, or image
+generation unless the selected OpenCode model explicitly supports that capability.
 
 ## Local Model Configuration
 
