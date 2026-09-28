@@ -16,7 +16,6 @@ Detailed setup and configuration guides for each component in the AI Lab stack.
 |-------|-----------|-----------|
 | [Traefik](setup-traefik.md) | Reverse proxy + TLS | — |
 | [Dify](setup-dify.md) | AI application platform | `dify.<domain>` |
-| [Flowise](setup-flowise.md) | Visual AI agent builder | `flow.<domain>` |
 | [n8n](setup-n8n.md) | Workflow automation | `n8n.<domain>` |
 | [n8n MCP](setup-n8n-mcp.md) | OpenCode MCP connection to n8n | `n8n.<domain>/mcp-server/http` |
 | [Langfuse](setup-langfuse.md) | LLM observability | `trace.<domain>` |
@@ -25,7 +24,7 @@ Detailed setup and configuration guides for each component in the AI Lab stack.
 ## Integration Guide
 
 [Integration Guide](integration-guide.md) — How to connect all services
-together: Ollama, Qdrant, Dify, Flowise, n8n, and Langfuse. Includes
+together: Ollama, Qdrant, Dify, n8n, and Langfuse. Includes
 connection matrix, per-integration setup steps, cross-platform workflows,
 and troubleshooting.
 
@@ -52,3 +51,4 @@ See [adr/](adr/) for all decisions about platform choices and configuration.
 | [ADR-0004](adr/0004-langfuse-for-observability.md) | Use Langfuse for LLM observability |
 | [ADR-0005](adr/0005-ubuntu-2404-base.md) | Ubuntu 24.04 as base OS |
 | [ADR-0006](adr/0006-lab-user-no-root.md) | Dedicated lab user, no root SSH |
+| [ADR-0007](adr/0007-retire-flowise.md) | Retire Flowise; locate its historical setup guide |

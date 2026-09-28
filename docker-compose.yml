@@ -15,9 +15,9 @@ networks:
     driver: bridge
 
 volumes:
-  flowise-data:
   n8n-data:
   openclaw-data:
+  openclaw-ssh:
   ollama-data:
   qdrant-data:
   langfuse-db-data:
@@ -92,37 +92,6 @@ services:
       - no-new-privileges:true
 
   # ===========================================================================
-  # Flowise — Visual AI Agent Builder
-  # ===========================================================================
-  flowise:
-    image: "flowiseai/flowise:${FLOWISE_VERSION:-latest}"
-    container_name: flowise
-    restart: unless-stopped
-    environment:
-      - FLOWISE_USERNAME=${FLOWISE_USERNAME}
-      - FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
-      - FLOWISE_SECRETKEY_OVERWRITE=${FLOWISE_SECRETKEY_OVERWRITE}
-      - APIKEY_STORAGE_TYPE=json
-    volumes:
-      - "flowise-data:/root/.flowise"
-    networks:
-      - ai-net
-      - traefik-public
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.flowise.rule=Host(`flow.${DOMAIN}`)"
-      - "traefik.http.routers.flowise.entrypoints=websecure"
-      - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.flowise.middlewares=secure-headers@docker"
-      - "traefik.http.services.flowise.loadbalancer.server.port=3000"
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))\""]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # ===========================================================================
   # n8n — Workflow Automation
   # ===========================================================================
   n8n:
@@ -182,6 +151,7 @@ services:
     command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
     volumes:
       - "openclaw-data:/home/node/.openclaw"
+      - "openclaw-ssh:/home/node/.ssh"
     networks:
       - openclaw-net
     ports:

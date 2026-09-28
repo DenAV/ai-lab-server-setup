@@ -22,7 +22,6 @@ docker compose logs
 
 # Specific service (last 50 lines, follow)
 docker compose logs --tail=50 -f traefik
-docker compose logs --tail=50 -f flowise
 docker compose logs --tail=50 -f n8n
 docker compose --profile local-model logs --tail=50 -f ollama
 docker compose logs --tail=50 -f langfuse
@@ -69,7 +68,7 @@ sudo ss -tlnp | grep -E '80|443|6333|18789'
 sudo ufw status verbose
 
 # DNS resolution
-dig +short flow.example.com
+dig +short n8n.example.com
 curl -sf -o /dev/null -w '%{http_code}' http://localhost:80
 ```
 
@@ -465,10 +464,10 @@ cat .secrets
 
 ```bash
 # Check DNS resolution (from local machine)
-nslookup flow.example.com 8.8.8.8
+nslookup n8n.example.com 8.8.8.8
 
 # Check from server
-dig +short flow.example.com
+dig +short n8n.example.com
 ```
 
 ### Hetzner DNS CNAME records
