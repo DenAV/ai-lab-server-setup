@@ -124,15 +124,6 @@ chain.invoke({"input": "query"}, config={"callbacks": [handler]})
 | **Datasets** | Test datasets for evaluation |
 | **Prompts** | Version-controlled prompt management |
 
-## Connecting to Flowise
-
-1. In Langfuse, create an API key
-2. In Flowise, add **Langfuse** node to your chatflow
-3. Set:
-   - Base URL: `http://langfuse:3000` (Docker network)
-   - Public Key: `pk-...`
-   - Secret Key: `sk-...`
-
 ## Connecting to n8n
 
 1. In n8n, add **HTTP Request** node after AI nodes

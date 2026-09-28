@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Flowise service, Docker volume declaration, generated credentials, validation, and active setup instructions. See [ADR-0007](docs/adr/0007-retire-flowise.md) for the archived guide's commit.
+
 ### Added
 
 - OpenClaw Gateway container, isolated network, persistent state, health check, and loopback-only access

@@ -4,7 +4,7 @@ Universal provisioning scripts for AI/DevOps lab environments on **Ubuntu 24.04*
 
 One script turns a fresh server into a fully configured AI lab with Docker,
 Qdrant, Python venv, firewall, and SSH hardening. Optionally deploy a full platform
-stack — Dify, Flowise, n8n, OpenClaw, Langfuse, and Traefik — with a single `docker compose up`.
+stack — Dify, n8n, OpenClaw, Langfuse, and Traefik — with a single `docker compose up`.
 Works with any cloud provider or bare metal — not tied to a specific platform.
 
 ## System Requirements
@@ -116,13 +116,15 @@ Services included:
 |---------|-----------|---------|-------|
 | Traefik | — | Reverse proxy with automatic TLS | [setup](docs/setup-traefik.md) |
 | Dify | `dify.<domain>` | AI application platform | [setup](docs/setup-dify.md) |
-| Flowise | `flow.<domain>` | Visual AI agent builder | [setup](docs/setup-flowise.md) |
 | n8n | `n8n.<domain>` | Workflow automation | [setup](docs/setup-n8n.md) |
 | OpenClaw | SSH tunnel only | Personal AI assistant | [setup](docs/setup-openclaw.md) |
 | Ollama | optional internal service | Local LLM runtime (`local-model` profile) | [setup](docs/setup-ollama.md) |
 | Qdrant | internal | Vector database | [setup](docs/setup-qdrant.md) |
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/setup-langfuse.md) |
 | Demo DB | internal | Shared PostgreSQL for demo projects | — |
+
+Flowise was retired from this stack. See [ADR-0007](docs/adr/0007-retire-flowise.md)
+for the reason and the commit containing its former setup guide.
 
 Optional internal workers can be started with an extra compose file:
 

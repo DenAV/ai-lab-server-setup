@@ -26,7 +26,7 @@ their available memory or GPU configuration.
 - Reproducible service configuration and lifecycle through Docker Compose
 - No unauthenticated Ollama API exposed on the host network
 - Resource-constrained servers avoid downloading or loading local models
-- Dify, n8n, Flowise, and OpenClaw share the same internal endpoint
+- Dify, n8n, and OpenClaw share the same internal endpoint
 
 ### Negative
 

@@ -11,36 +11,91 @@ optionally reach `ollama-compose` when the `local-model` profile is enabled.
 - **State:** `openclaw-data` Docker volume
 - **Authentication:** Gateway token from `.env`
 
-## Access
+## Access from WSL
 
-Forward the Gateway port over SSH:
+Keep a dedicated tunnel open in a local WSL terminal. The SSH alias only needs to exist
+inside WSL; the Windows browser can use the forwarded localhost port:
 
 ```bash
-ssh -L 18789:127.0.0.1:18789 lab@server.example.com
+ssh -N -L 18789:127.0.0.1:18789 <ssh-alias>
 ```
 
-Then open `http://127.0.0.1:18789/` and enter the Gateway token.
+In a separate SSH session, ask OpenClaw for the dashboard URL:
+
+```bash
+cd ~/ai-lab-server-setup
+docker compose exec openclaw node dist/index.js dashboard --no-open
+```
+
+If token auto-auth is not delivered, construct the URL from the server `.env`:
+
+```bash
+TOKEN="$(grep '^OPENCLAW_GATEWAY_TOKEN=' .env | cut -d= -f2-)"
+printf 'http://127.0.0.1:18789/#token=%s\n' "$TOKEN"
+unset TOKEN
+```
+
+Open the resulting URL in the Windows browser. The Gateway token authenticates the
+browser to OpenClaw; it is separate from model-provider OAuth and must not be shared.
 
 ## ChatGPT Subscription
 
 Use ChatGPT/Codex OAuth for the primary model. This uses subscription quota and does not
-require an OpenAI Platform API key:
+require or configure an OpenAI Platform API key. Device-code login avoids localhost
+callback routing between the container, remote server, WSL, and Windows:
 
 ```bash
 docker compose exec openclaw node dist/index.js models auth login \
-  --provider openai --set-default
+  --provider openai --set-default --device-code
 ```
 
-The command requires an interactive terminal. On a headless server, open the displayed
-authorization URL locally and paste the final redirect URL back into the SSH session.
-OAuth credentials are stored in the `openclaw-data` volume.
+If device-code login is unavailable, omit `--device-code`, open the displayed URL in the
+Windows browser, and complete authorization. The browser may fail to load
+`localhost:1455`; copy the complete callback URL from its address bar and paste it into
+the waiting SSH prompt. Treat callback URLs as temporary secrets. OAuth credentials are
+stored in the `openclaw-data` volume.
 
-Verify the account and canonical subscription-backed model route:
+Enable the bundled Codex harness and explicitly pin the subscription-backed model to it.
+The runtime pin makes the route fail closed instead of silently calling the OpenAI
+Platform API:
 
 ```bash
 docker compose exec openclaw node dist/index.js models auth list --provider openai
 docker compose exec openclaw node dist/index.js models set openai/gpt-5.6-sol
+docker compose exec openclaw node dist/index.js plugins enable codex
+docker compose exec openclaw node dist/index.js config set \
+  agents.defaults.models \
+  '{"openai/gpt-5.6-sol":{"agentRuntime":{"id":"codex"}}}' \
+  --strict-json --merge
+docker compose exec openclaw node dist/index.js config validate
+docker compose restart openclaw
 ```
+
+Verify the bundled managed app-server after the restart:
+
+```bash
+docker compose exec openclaw node dist/index.js doctor \
+  --lint --only codex/managed-app-server --json
+```
+
+The expected result contains `"ok":true` and no findings. An additional
+`@openclaw/codex` installation is unnecessary when this check passes.
+
+Start a fresh terminal session so it does not retain the previous runtime:
+
+```bash
+docker compose exec openclaw node dist/index.js tui
+```
+
+Then run:
+
+```text
+/new
+/status
+/codex status
+```
+
+`/status` must report `Runtime: OpenAI Codex` before relying on subscription routing.
 
 ## OpenCode Go Fallback
 
@@ -96,6 +151,15 @@ curl -fsS http://127.0.0.1:18789/healthz
 docker compose exec openclaw node dist/index.js security audit
 docker compose exec openclaw node dist/index.js models status
 ```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Browser says a matching token is required | Gateway token was not included | Generate the `#token=` dashboard URL described in [Access from WSL](#access-from-wsl) |
+| Browser fails at `localhost:1455` after OpenAI login | OAuth callback listener is remote or inside the container | Paste the full callback URL into the waiting SSH prompt, or repeat login with `--device-code` |
+| `401 Unauthorized` from `api.openai.com/v1/responses` | OpenClaw used its embedded API runtime instead of Codex subscription routing | Enable `codex`, apply the explicit `agentRuntime.id: codex` pin, restart, and start a new session |
+| Config warns that Codex is disabled | Codex config exists but the bundled plugin is inactive | Run `plugins enable codex`, validate, and restart OpenClaw |
 
 Do not mount the Docker socket or directories belonging to other services. Back up the
 `openclaw-data` volume because it contains configuration, conversations, and provider

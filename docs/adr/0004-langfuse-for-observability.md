@@ -9,6 +9,9 @@ LLM applications need observability: tracing, cost tracking, latency metrics,
 and quality evaluation. We need a self-hosted solution that integrates with
 Ollama, Flowise, n8n, and Python scripts.
 
+Flowise was retired later; see [ADR-0007](0007-retire-flowise.md). This context
+records the original decision.
+
 ## Decision
 
 Use **Langfuse** (self-hosted) for LLM observability.

@@ -18,7 +18,6 @@ graph TD
 
     Traefik --> Dify["Dify\ndify.domain"]
     Traefik --> n8n["n8n\nn8n.domain"]
-    Traefik --> Flowise["Flowise\nflow.domain"]
     Traefik --> Langfuse["Langfuse\ntrace.domain"]
 
     subgraph ai-net["ai-net Docker network"]
@@ -34,15 +33,11 @@ graph TD
     n8n -->|vector store| Qdrant
     n8n -.->|traces| Langfuse
 
-    Flowise -->|LLM + embeddings| Ollama
-    Flowise -->|vector store| Qdrant
-    Flowise -.->|traces| Langfuse
 
     style Internet fill:#6b7280,stroke:#4b5563,color:#fff
     style Traefik fill:#24a1c1,stroke:#1b7a93,color:#fff
     style Dify fill:#1677ff,stroke:#0958d9,color:#fff
     style n8n fill:#ff6d5a,stroke:#e5553d,color:#fff
-    style Flowise fill:#6556f1,stroke:#4f46c7,color:#fff
     style Langfuse fill:#f5a623,stroke:#d48b0f,color:#000
     style Ollama fill:#1a1a2e,stroke:#0f0f1a,color:#fff
     style Qdrant fill:#dc244c,stroke:#b01d3d,color:#fff
@@ -60,7 +55,6 @@ All services on the `ai-net` Docker network use container names as hostnames.
 | Langfuse | `https://trace.<domain>` | HTTPS | API key (Public + Secret) |
 | n8n | `https://n8n.<domain>` | HTTPS | Account credentials |
 | Dify | `https://dify.<domain>` | HTTPS | Account credentials |
-| Flowise | `https://flow.<domain>` | HTTPS | `FLOWISE_USERNAME` / `FLOWISE_PASSWORD` |
 
 > **Note:** Ollama is optional. Set `COMPOSE_PROFILES=local-model` before using
 > the internal endpoint.
@@ -69,12 +63,11 @@ All services on the `ai-net` Docker network use container names as hostnames.
 
 Which service can connect to which, and what for:
 
-| From → To | Ollama | Qdrant | Langfuse | n8n | Dify | Flowise |
-|-----------|--------|--------|----------|-----|------|---------|
-| **n8n** | LLM chat, embeddings | Vector store (RAG) | Tracing (via HTTP) | — | Trigger workflows | — |
-| **Dify** | LLM chat, embeddings | Knowledge base storage | Tracing (native) | Call webhooks | — | — |
-| **Flowise** | LLM chat, embeddings | Vector store (RAG) | Tracing (via API) | Call webhooks | — | — |
-| **Langfuse** | — | — | — | — | — | — |
+| From → To | Ollama | Qdrant | Langfuse | n8n | Dify |
+|-----------|--------|--------|----------|-----|------|
+| **n8n** | LLM chat, embeddings | Vector store (RAG) | Tracing (via HTTP) | — | Trigger workflows |
+| **Dify** | LLM chat, embeddings | Knowledge base storage | Tracing (native) | Call webhooks | — |
+| **Langfuse** | — | — | — | — | — |
 
 ## Ollama — LLM for All Services
 
@@ -124,14 +117,6 @@ docker compose exec ollama ollama pull nomic-embed-text
 
 > Enable the `local-model` profile as described in [setup-ollama.md](setup-ollama.md).
 
-### Connect from Flowise
-
-1. Add a **ChatOllama** node
-2. Base URL: `http://ollama-compose:11434`
-3. Model: `llama3.2`
-
-For embeddings, use the **Ollama Embeddings** node with model `nomic-embed-text`.
-
 ## Qdrant — Vector Database for RAG
 
 Qdrant stores embeddings and enables semantic search across all platforms.
@@ -158,16 +143,6 @@ Always attach an **Embeddings** sub-node (Ollama Embeddings, model
    - API Key: from `.env`
 3. Select embedding model (e.g., `nomic-embed-text` via Ollama)
 4. Upload and index documents
-
-### Connect from Flowise
-
-1. Add a **Qdrant** vector store node
-2. URL: `http://qdrant-compose:6333`
-3. API Key: from `.env`
-4. Collection Name: your collection
-
-Connect it with **Ollama Embeddings** (`nomic-embed-text`) and a
-**Conversational Retrieval QA Chain** for a complete RAG pipeline.
 
 ### Important
 
@@ -208,18 +183,6 @@ Dify has native Langfuse integration:
    - Secret Key: `sk-...`
 
 All LLM calls in Dify are now automatically traced.
-
-### Connect from Flowise
-
-Flowise supports Langfuse via environment variables. Add to the `flowise`
-service in `docker-compose.yml`:
-
-```yaml
-environment:
-  - LANGFUSE_BASE_URL=https://trace.<domain>
-  - LANGFUSE_PUBLIC_KEY=pk-...
-  - LANGFUSE_SECRET_KEY=sk-...
-```
 
 ### Connect from Python
 
@@ -266,23 +229,6 @@ Call a Dify chatbot from an n8n workflow:
 }
 ```
 
-### n8n triggers Flowise
-
-Call a Flowise chatflow from an n8n workflow:
-
-1. In Flowise: create a chatflow, get its ID from the URL
-2. Create an API key in Flowise **Settings → API Keys**
-3. In n8n: add **HTTP Request** node → POST
-   - URL: `https://flow.<domain>/api/v1/prediction/<chatflow-id>`
-   - Headers: `Authorization: Bearer <flowise-api-key>`
-   - Body:
-
-```json
-{
-  "question": "{{ $json.input }}"
-}
-```
-
 ### Complete RAG Pipeline (n8n + Qdrant + Ollama)
 
 ```text
@@ -302,16 +248,6 @@ Chat Trigger → AI Agent → Vector Store Retriever (Qdrant)
 1. Create Knowledge Base → upload documents → auto-indexed in Qdrant
 2. Create a Chatbot app → attach Knowledge Base as context
 3. Traces appear automatically in Langfuse
-
-### Complete RAG Pipeline (Flowise)
-
-```text
-Document Loader → Recursive Text Splitter
-  → Ollama Embeddings (nomic-embed-text)
-  → Qdrant Vector Store (Insert)
-  → ChatOllama (llama3.2)
-  → Conversational Retrieval QA Chain
-```
 
 ## Troubleshooting Connections
 

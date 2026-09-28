@@ -67,7 +67,7 @@ collect "compose-config"   "cd ${PROJECT_DIR} && docker compose config --no-inte
 
 # --- Service logs (last 100 lines each) ---
 echo "[4/7] Service logs..."
-SERVICES="traefik flowise n8n openclaw ollama-compose qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
+SERVICES="traefik n8n openclaw ollama-compose qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
 for svc in ${SERVICES}; do
   collect "log-${svc}" "docker logs --tail=100 ${svc} 2>&1"
 done
@@ -85,7 +85,7 @@ collect "ports"            "sudo ss -tlnp"
 collect "ufw-status"       "sudo ufw status verbose"
 collect "ufw-rules"        "sudo ufw show added 2>/dev/null"
 collect "iptables"         "sudo iptables -L -n --line-numbers 2>/dev/null"
-collect "dns-resolve"      "for h in ai flow n8n trace dify; do echo \"--- \${h} ---\"; dig +short \${h}.$(grep '^DOMAIN=' ${PROJECT_DIR}/.env 2>/dev/null | cut -d= -f2 || echo 'example.com'); done"
+collect "dns-resolve"      "for h in ai n8n trace dify; do echo \"--- \${h} ---\"; dig +short \${h}.$(grep '^DOMAIN=' ${PROJECT_DIR}/.env 2>/dev/null | cut -d= -f2 || echo 'example.com'); done"
 collect "curl-traefik"     "curl -sf -o /dev/null -w 'HTTP %{http_code} (%{time_total}s)\n' http://localhost:80 2>/dev/null || echo 'traefik not reachable'"
 
 # --- Configuration (sanitized — no secrets) ---

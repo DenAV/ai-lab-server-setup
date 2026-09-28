@@ -105,7 +105,7 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   echo "Platform Stack (docker compose):"
 
   # Expected containers from docker-compose.yml
-  CONTAINERS="traefik flowise n8n openclaw qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
+  CONTAINERS="traefik n8n openclaw qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
   if local_model_enabled; then
     CONTAINERS="${CONTAINERS} ollama-compose"
   fi
@@ -117,7 +117,6 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   echo ""
   echo "Platform APIs:"
   check "Traefik entrypoint"  "curl -sf -o /dev/null -w '%{http_code}' http://localhost:80 | grep -qE '(301|302|404)'"
-  check "Flowise API"         "docker exec flowise wget -q --spider http://localhost:3000 2>/dev/null || docker exec flowise curl -sf http://localhost:3000 > /dev/null 2>&1 || docker exec traefik wget -q --spider http://flowise:3000 2>/dev/null"
   check "n8n API"             "docker exec n8n node -e \"require('http').get('http://localhost:5678/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null"
   check "Langfuse API"        "docker exec langfuse node -e \"require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null || docker exec traefik wget -q --spider http://langfuse:3000 2>/dev/null"
   check "Dify API"            "docker exec dify-nginx curl -sf http://localhost:80 > /dev/null 2>&1 || docker exec dify-nginx wget -q --spider http://localhost:80 2>/dev/null"
