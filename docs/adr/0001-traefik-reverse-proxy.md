@@ -9,6 +9,9 @@ The AI lab stack runs multiple web services (Flowise, n8n, Langfuse) that
 need HTTPS access from the internet. We need a reverse proxy that handles
 TLS termination and routes traffic to the correct container.
 
+Flowise was retired later; see [ADR-0007](0007-retire-flowise.md). This context
+records the original decision.
+
 Options: Traefik, Nginx Proxy Manager, Caddy, plain Nginx.
 
 ## Decision

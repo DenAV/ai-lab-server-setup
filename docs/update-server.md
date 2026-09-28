@@ -6,7 +6,7 @@ server. Use this after pushing improvements to GitHub.
 ## When to Update
 
 - New services added to `docker-compose.yml`
-- Service versions bumped (Dify, n8n, Flowise, etc.)
+- Service versions bumped (Dify, n8n, Langfuse, etc.)
 - Configuration changes (`docker-compose.yml`, `config/`, scripts)
 - New demo project support (`.env.example` changes)
 - Security patches or hardening improvements

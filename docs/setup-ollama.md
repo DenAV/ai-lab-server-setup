@@ -36,7 +36,7 @@ Alternatively, enable the profile for one command:
 docker compose --profile local-model up -d
 ```
 
-Local inference competes with Dify, n8n, Flowise, and OpenClaw for memory. Do not enable
+Local inference competes with Dify, n8n, and OpenClaw for memory. Do not enable
 the profile merely because the container starts; verify that the selected model fits
 without sustained swap use or out-of-memory kills.
 
@@ -48,7 +48,6 @@ All consumers use the internal Docker hostname:
 |----------|----------|
 | OpenClaw | `http://ollama-compose:11434` |
 | n8n | `http://ollama-compose:11434` |
-| Flowise | `http://ollama-compose:11434` |
 | Dify | `http://ollama-compose:11434` |
 
 OpenClaw must use Ollama's native API URL without `/v1`. An HTTP Request node that

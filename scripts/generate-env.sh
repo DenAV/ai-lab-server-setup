@@ -50,9 +50,6 @@ TIMEZONE="${TIMEZONE:-Europe/Berlin}"
 
 DEMO_DB_PASS="$(gen_password)"
 
-FLOWISE_PASSWORD="$(gen_password)"
-FLOWISE_SECRET="$(gen_secret 32)"
-
 N8N_PASSWORD="$(gen_password)"
 N8N_ENCRYPTION_KEY="$(gen_secret 32)"
 
@@ -89,14 +86,6 @@ TIMEZONE=${TIMEZONE}
 # Demo DB — Shared PostgreSQL for demo projects
 # =============================================================================
 DEMO_DB_PASSWORD=${DEMO_DB_PASS}
-
-# =============================================================================
-# Flowise
-# =============================================================================
-FLOWISE_VERSION=latest
-FLOWISE_USERNAME=admin
-FLOWISE_PASSWORD=${FLOWISE_PASSWORD}
-FLOWISE_SECRETKEY_OVERWRITE=${FLOWISE_SECRET}
 
 # =============================================================================
 # n8n
@@ -161,14 +150,9 @@ cat > "${SECRETS_FILE}" << EOF
 
 === Access URLs ===
 Dify:     https://dify.${DOMAIN}
-Flowise:  https://flow.${DOMAIN}
 n8n:      https://n8n.${DOMAIN}
 Langfuse: https://trace.${DOMAIN}
 OpenClaw: http://127.0.0.1:18789 (SSH tunnel required)
-
-=== Flowise ===
-Username: admin
-Password: ${FLOWISE_PASSWORD}
 
 === n8n ===
 Username: admin

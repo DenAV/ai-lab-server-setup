@@ -25,7 +25,6 @@ Point your domain and subdomains to the server:
 |--------|------|-------|---------|
 | `ai.example.com` | A | `<server-ip>` | Base record |
 | `dify.example.com` | CNAME | `ai.example.com` | Dify |
-| `flow.example.com` | CNAME | `ai.example.com` | Flowise |
 | `n8n.example.com` | CNAME | `ai.example.com` | n8n |
 | `trace.example.com` | CNAME | `ai.example.com` | Langfuse |
 
@@ -108,16 +107,12 @@ If you don't have a domain, skip Traefik and expose services directly:
 
 ```yaml
 # In docker-compose.yml, add ports to each service:
-flowise:
-  ports:
-    - "3000:3000"
-
 n8n:
   ports:
     - "5678:5678"
 ```
 
-Access via `http://<server-ip>:3000`, etc. No TLS in this mode.
+Access via `http://<server-ip>:5678`, etc. No TLS in this mode.
 
 ## Certificate Management
 
@@ -135,7 +130,7 @@ docker compose up -d traefik
 
 | Issue | Solution |
 |-------|----------|
-| Certificate not issued | Check DNS: `dig +short flow.example.com` must resolve |
+| Certificate not issued | Check DNS: `dig +short n8n.example.com` must resolve |
 | 404 on subdomain | Verify container is running: `docker compose ps` |
 | 502 Bad Gateway | Container port mismatch — check `loadbalancer.server.port` |
 | Rate limit (Let's Encrypt) | Max 5 certs per domain per week — wait or use staging |
