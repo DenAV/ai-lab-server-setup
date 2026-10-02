@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Optional rootless OpenClaw sandbox client image, Docker CLI overlay, and operating guide
+- ADR-0008, project TODO, and roadmap for a modular stack constructor with presets,
+  a custom component checklist, dependency resolution, and resource checks
 - OpenClaw Gateway container, isolated network, persistent state, health check, and loopback-only access
 - Optional `local-model` Compose profile for container-only Ollama deployments
 - `CONSOLE_API_URL`, `CONSOLE_WEB_URL`, `APP_API_URL`, `APP_WEB_URL` to `dify-api` in docker-compose (fixes CORS 401 errors)
@@ -39,5 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Pin n8n to 2.40.7 and Qdrant to v1.19.1, and remove the unused setup-time Qdrant override
 - Removed native Ollama installation from `setup.sh`; local inference now uses only the optional Compose service
 - OpenClaw provider credentials are stored through interactive ChatGPT OAuth and OpenCode Go auth instead of Compose environment variables
