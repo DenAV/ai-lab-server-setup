@@ -87,6 +87,8 @@ The script auto-clones the repo for config files if not running from a local cop
 | [scripts/collect-diagnostics.sh](scripts/collect-diagnostics.sh) | Collect logs and configs into a zip for support |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
 | [docs/](docs/) | Detailed setup guides and architecture decision records |
+| [docs/TODO.md](docs/TODO.md) | Actionable work for the modular stack constructor |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Delivery phases for selectable deployment profiles |
 | [docs/update-server.md](docs/update-server.md) | How to apply repo changes to a running server |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions |
 
