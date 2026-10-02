@@ -79,6 +79,7 @@ The script auto-clones the repo for config files if not running from a local cop
 | [setup.sh](setup.sh) | Main setup script — run on any fresh Ubuntu 24.04 |
 | [config/fail2ban.conf](config/fail2ban.conf) | Fail2ban jail configuration |
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
+| [config/components.yml](config/components.yml) | Component inventory and dependency contracts |
 | [docker-compose.yml](docker-compose.yml) | AI platform stack with optional Ollama profile |
 | [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
 | [compose.openclaw-cli.yml](compose.openclaw-cli.yml) | Optional Docker CLI overlay for an existing rootless OpenClaw sandbox |
@@ -86,6 +87,7 @@ The script auto-clones the repo for config files if not running from a local cop
 | [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
 | [scripts/collect-diagnostics.sh](scripts/collect-diagnostics.sh) | Collect logs and configs into a zip for support |
+| [scripts/validate-component-catalog.py](scripts/validate-component-catalog.py) | Detect catalog and Compose drift |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
 | [docs/](docs/) | Detailed setup guides and architecture decision records |
 | [docs/TODO.md](docs/TODO.md) | Actionable work for the modular stack constructor |

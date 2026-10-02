@@ -39,12 +39,14 @@ REQUIRED_FILES=(
   "setup.sh"
   "docker-compose.yml"
   "docker-compose.workers.yml"
+  "config/components.yml"
   "config/fail2ban.conf"
   "config/bash_aliases"
   "config/dify-nginx.conf"
   "scripts/generate-env.sh"
   "scripts/validate.sh"
   "scripts/collect-diagnostics.sh"
+  "scripts/validate-component-catalog.py"
   "examples/cloud-config.yml"
   "docs/README.md"
 )
@@ -103,6 +105,7 @@ YAML_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "compose.openclaw-cli.yml"
+  "config/components.yml"
   "examples/cloud-config.yml"
 )
 
@@ -127,25 +130,54 @@ else
 fi
 
 # =========================================================================
-# 5. Docker Compose config validation
+# 5. Component catalog
+# =========================================================================
+echo ""
+echo "Component catalog:"
+if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+  if python3 "${PROJECT_DIR}/scripts/validate-component-catalog.py"; then
+    pass "component catalog matches Compose"
+  else
+    fail "component catalog validation failed"
+  fi
+else
+  fail "python3 and PyYAML are required for component catalog validation"
+fi
+
+# =========================================================================
+# 6. Docker Compose config validation
 # =========================================================================
 echo ""
 echo "Docker Compose:"
 if command -v docker &>/dev/null && docker compose version &>/dev/null; then
-  # Use .env.example to provide required variables
-  if docker compose -f "${PROJECT_DIR}/docker-compose.yml" \
-    --env-file "${PROJECT_DIR}/.env.example" \
-    config --quiet 2>/dev/null; then
-    pass "docker-compose.yml valid"
-  else
-    fail "docker-compose.yml — config error"
-  fi
+  validate_compose() {
+    local name="$1"
+    shift
+    local args=()
+    local file
+    for file in "$@"; do
+      args+=("-f" "${PROJECT_DIR}/${file}")
+    done
+    if docker compose "${args[@]}" \
+      --env-file "${PROJECT_DIR}/.env.example" \
+      config --quiet 2>/dev/null; then
+      pass "${name} Compose model valid"
+    else
+      fail "${name} Compose model invalid"
+    fi
+  }
+
+  validate_compose "base" "docker-compose.yml"
+  validate_compose "workers overlay" "docker-compose.yml" "docker-compose.workers.yml"
+  validate_compose "OpenClaw overlay" "docker-compose.yml" "compose.openclaw-cli.yml"
+  validate_compose "combined overlays" \
+    "docker-compose.yml" "docker-compose.workers.yml" "compose.openclaw-cli.yml"
 else
   skip "docker compose not available"
 fi
 
 # =========================================================================
-# 6. .env.example completeness
+# 7. .env.example completeness
 # =========================================================================
 echo ""
 echo "Environment:"
@@ -170,7 +202,7 @@ if [ "${MISSING_VARS}" -eq 0 ]; then
 fi
 
 # =========================================================================
-# 7. No secrets in committed files
+# 8. No secrets in committed files
 # =========================================================================
 echo ""
 echo "Security:"
@@ -200,7 +232,7 @@ else
 fi
 
 # =========================================================================
-# 8. Documentation links
+# 9. Documentation links
 # =========================================================================
 echo ""
 echo "Documentation:"
