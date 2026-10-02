@@ -40,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Pin n8n to 2.40.7 and Qdrant to v1.19.1, and remove the unused setup-time Qdrant override
 - Removed native Ollama installation from `setup.sh`; local inference now uses only the optional Compose service
 - OpenClaw provider credentials are stored through interactive ChatGPT OAuth and OpenCode Go auth instead of Compose environment variables

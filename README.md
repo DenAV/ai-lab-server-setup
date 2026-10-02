@@ -164,7 +164,6 @@ Override host provisioning defaults via environment variables before running `se
 ```bash
 export LAB_USER="myuser"
 export TIMEZONE="America/New_York"
-export QDRANT_VERSION="v1.13.0"
 ./setup.sh
 ```
 
@@ -172,7 +171,6 @@ export QDRANT_VERSION="v1.13.0"
 |----------|---------|-------------|
 | `LAB_USER` | `lab` | Non-root user to create |
 | `TIMEZONE` | `Europe/Berlin` | Server timezone |
-| `QDRANT_VERSION` | `v1.12.1` | Qdrant Docker image tag |
 
 Select the model mode in `.env`:
 
