@@ -102,6 +102,7 @@ echo "YAML syntax:"
 YAML_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
+  "compose.openclaw-cli.yml"
   "examples/cloud-config.yml"
 )
 

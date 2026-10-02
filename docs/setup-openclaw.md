@@ -1,5 +1,8 @@
 # OpenClaw
 
+For an existing dedicated rootless Docker deployment, see
+[Rootless sandbox client](openclaw-rootless-sandbox.md).
+
 ## Overview
 
 OpenClaw runs as an isolated Docker Compose service. Its Gateway is published only on

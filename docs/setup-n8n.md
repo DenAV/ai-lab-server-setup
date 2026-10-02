@@ -17,7 +17,7 @@ APIs, databases, and trigger automated pipelines.
 In `.env`:
 
 ```bash
-N8N_VERSION=latest
+N8N_VERSION=2.40.7
 N8N_BASIC_AUTH_USER=admin
 N8N_BASIC_AUTH_PASSWORD=<strong-password>
 N8N_ENCRYPTION_KEY=<random-key>
