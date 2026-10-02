@@ -1,0 +1,15 @@
+# Append after the host-specific sandbox socket/workspace override.
+services:
+  openclaw:
+    image: openclaw-sandbox-client:2026.9.4-docker29.8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.openclaw-sandbox
+    environment:
+      DOCKER_HOST: unix:///run/openclaw-sandbox/docker.sock
+    volumes:
+      - type: bind
+        source: /home/node/.openclaw/sandbox/skills-workspaces
+        target: /home/node/.openclaw/sandbox/skills-workspaces
+        bind:
+          create_host_path: false

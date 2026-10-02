@@ -81,6 +81,7 @@ The script auto-clones the repo for config files if not running from a local cop
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
 | [docker-compose.yml](docker-compose.yml) | AI platform stack with optional Ollama profile |
 | [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
+| [compose.openclaw-cli.yml](compose.openclaw-cli.yml) | Optional Docker CLI overlay for an existing rootless OpenClaw sandbox |
 | [.env.example](.env.example) | Environment variables for docker-compose |
 | [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
