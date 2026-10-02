@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- ADR-0008, project TODO, and roadmap for a modular stack constructor with presets,
+  a custom component checklist, dependency resolution, and resource checks
 - OpenClaw Gateway container, isolated network, persistent state, health check, and loopback-only access
 - Optional `local-model` Compose profile for container-only Ollama deployments
 - `CONSOLE_API_URL`, `CONSOLE_WEB_URL`, `APP_API_URL`, `APP_WEB_URL` to `dify-api` in docker-compose (fixes CORS 401 errors)
