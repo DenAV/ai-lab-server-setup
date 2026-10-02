@@ -38,6 +38,8 @@ See [demos/](demos/) for deployment guides of client demo projects.
 |-------|-------------|
 | [Update Server](update-server.md) | Apply repo changes to a running server |
 | [Upgrade Dify](upgrade-dify.md) | Major version upgrade (0.15.x → 1.13.x) |
+| [TODO](TODO.md) | Actionable project work |
+| [Roadmap](ROADMAP.md) | Modular stack constructor delivery phases |
 
 ## Demo Projects
 
@@ -52,3 +54,4 @@ See [adr/](adr/) for all decisions about platform choices and configuration.
 | [ADR-0005](adr/0005-ubuntu-2404-base.md) | Ubuntu 24.04 as base OS |
 | [ADR-0006](adr/0006-lab-user-no-root.md) | Dedicated lab user, no root SSH |
 | [ADR-0007](adr/0007-retire-flowise.md) | Retire Flowise; locate its historical setup guide |
+| [ADR-0008](adr/0008-modular-stack-constructor.md) | Build a modular stack constructor with presets and a checklist |

@@ -116,21 +116,42 @@ Access via `http://<server-ip>:5678`, etc. No TLS in this mode.
 
 ## Certificate Management
 
-```bash
-# Check certificate status
-docker exec traefik cat /certs/acme.json | python3 -m json.tool
+### TODO: Decide Cloudflare and origin TLS strategy
 
-# Force certificate renewal (delete and restart)
-docker compose stop traefik
-docker volume rm ai-lab-server-setup_traefik-certs
-docker compose up -d traefik
-```
+The reported Cloudflare certificate covers `*.example.com` and `example.com`;
+confirm its location and coverage before selecting an origin TLS strategy.
+Traefik separately stores origin certificates for `n8n.<domain>`,
+`trace.<domain>`, and `dify.<domain>`. The three origin certificates were
+expired on September 28, 2026. These DNS records are proxied through Cloudflare,
+so the current HTTP-01 challenge reaches Cloudflare before Traefik. Proxied DNS
+alone does not prevent HTTP-01 validation: the observed `522` response means
+Cloudflare timed out contacting the origin. An edge certificate does not make
+an expired origin certificate valid for Cloudflare Full (strict) or direct
+access to Traefik.
+
+- [ ] Confirm Cloudflare SSL/TLS mode, the actual edge certificate coverage,
+  and whether direct access to the origin is required.
+- [ ] Determine why HTTP-01 requests receive `522` (origin reachability,
+  firewall, and DNS address records) before attributing the failure to proxying.
+- [ ] Choose the origin certificate source: Let's Encrypt via Cloudflare DNS-01
+  (including wildcard issuance if needed), or Cloudflare Origin CA for traffic
+  that always passes through Cloudflare. Review DNS/API permissions and renewal
+  before changing the resolver. Do not assume HTTP-01 works through the current
+  Cloudflare proxy configuration.
+- [ ] Test the chosen configuration and rollback on one hostname before applying
+  it to the remaining services; verify expiry and trust both through Cloudflare
+  and directly against Traefik with the intended TLS mode.
+- [ ] Add expiry monitoring for the certificates actually used at the origin.
+
+Do not delete the shared `traefik-certs` volume to force renewal: it contains
+certificates for multiple services and deleting it does not fix a failing ACME
+challenge.
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Certificate not issued | Check DNS: `dig +short n8n.example.com` must resolve |
+| Certificate not issued | Check DNS and origin reachability: `dig +short n8n.example.com` |
 | 404 on subdomain | Verify container is running: `docker compose ps` |
 | 502 Bad Gateway | Container port mismatch — check `loadbalancer.server.port` |
 | Rate limit (Let's Encrypt) | Max 5 certs per domain per week — wait or use staging |

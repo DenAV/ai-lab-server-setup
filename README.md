@@ -81,12 +81,15 @@ The script auto-clones the repo for config files if not running from a local cop
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
 | [docker-compose.yml](docker-compose.yml) | AI platform stack with optional Ollama profile |
 | [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
+| [compose.openclaw-cli.yml](compose.openclaw-cli.yml) | Optional Docker CLI overlay for an existing rootless OpenClaw sandbox |
 | [.env.example](.env.example) | Environment variables for docker-compose |
 | [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
 | [scripts/collect-diagnostics.sh](scripts/collect-diagnostics.sh) | Collect logs and configs into a zip for support |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
 | [docs/](docs/) | Detailed setup guides and architecture decision records |
+| [docs/TODO.md](docs/TODO.md) | Actionable work for the modular stack constructor |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Delivery phases for selectable deployment profiles |
 | [docs/update-server.md](docs/update-server.md) | How to apply repo changes to a running server |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues and solutions |
 
@@ -162,7 +165,6 @@ Override host provisioning defaults via environment variables before running `se
 ```bash
 export LAB_USER="myuser"
 export TIMEZONE="America/New_York"
-export QDRANT_VERSION="v1.13.0"
 ./setup.sh
 ```
 
@@ -170,7 +172,6 @@ export QDRANT_VERSION="v1.13.0"
 |----------|---------|-------------|
 | `LAB_USER` | `lab` | Non-root user to create |
 | `TIMEZONE` | `Europe/Berlin` | Server timezone |
-| `QDRANT_VERSION` | `v1.12.1` | Qdrant Docker image tag |
 
 Select the model mode in `.env`:
 

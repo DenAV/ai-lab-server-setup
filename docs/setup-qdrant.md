@@ -18,7 +18,7 @@ Qdrant is started automatically by `setup.sh`. Manual start:
 docker run -d --name qdrant --restart unless-stopped \
   -p 6333:6333 \
   -v qdrant_data:/qdrant/storage \
-  qdrant/qdrant:v1.12.1
+  qdrant/qdrant:v1.19.1
 ```
 
 ## Management
@@ -213,7 +213,7 @@ docker run -d --name qdrant --restart unless-stopped \
   -p 6333:6333 \
   -v qdrant_data:/qdrant/storage \
   -e QDRANT__SERVICE__API_KEY=your-secret-key \
-  qdrant/qdrant:v1.12.1
+  qdrant/qdrant:v1.19.1
 ```
 
 Then pass the key in requests:

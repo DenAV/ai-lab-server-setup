@@ -24,7 +24,6 @@ set -euo pipefail
 # === Configuration (override via environment) ===
 LAB_USER="${LAB_USER:-lab}"
 TIMEZONE="${TIMEZONE:-Europe/Berlin}"
-QDRANT_VERSION="${QDRANT_VERSION:-v1.12.1}"
 REPO_URL="https://github.com/DenAV/ai-lab-server-setup.git"
 
 # === Detect repo directory ===
@@ -59,7 +58,6 @@ echo "============================================="
 echo "  User:     ${LAB_USER}"
 echo "  Timezone: ${TIMEZONE}"
 echo "  Swap:     ${SWAP_SIZE:-4G}"
-echo "  Qdrant:   ${QDRANT_VERSION}"
 echo "  Config:   ${REPO_DIR}"
 echo "============================================="
 echo ""
