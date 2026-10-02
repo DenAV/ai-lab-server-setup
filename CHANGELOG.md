@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Guidance for dedicated least-privilege credentials in persistent OpenClaw SSH storage
 - Optional rootless OpenClaw sandbox client image, Docker CLI overlay, and operating guide
 - ADR-0008, project TODO, and roadmap for a modular stack constructor with presets,
   a custom component checklist, dependency resolution, and resource checks
