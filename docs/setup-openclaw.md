@@ -8,7 +8,7 @@ optionally reach `ollama-compose` when the `local-model` profile is enabled.
 
 - **Image:** `ghcr.io/openclaw/openclaw:2026.9.3`
 - **Gateway:** `127.0.0.1:18789`
-- **State:** `openclaw-data` Docker volume
+- **State:** `openclaw-data` and `openclaw-ssh` Docker volumes
 - **Authentication:** Gateway token from `.env`
 
 ## Access from WSL
@@ -120,6 +120,27 @@ OpenCode Go provides model inference for supported coding-agent traffic. It is n
 general replacement for OpenAI Platform endpoints such as embeddings, speech, or image
 generation unless the selected OpenCode model explicitly supports that capability.
 
+## SSH Credentials
+
+The `openclaw-ssh` volume persists SSH configuration and keys across container
+recreation. Use it only for repositories or services that OpenClaw must access over SSH.
+Create a dedicated least-privilege deploy key inside the container; never copy a host,
+personal, or administrative private key into this volume. Register only its public key
+with the required repository or service.
+
+```bash
+docker compose exec openclaw sh -lc \
+  'test ! -e "$HOME/.ssh/id_ed25519" || { echo "SSH key already exists" >&2; exit 1; }; \
+  umask 077; mkdir -p "$HOME/.ssh"; ssh-keygen -t ed25519 -N "" \
+  -C "openclaw-agent" -f "$HOME/.ssh/id_ed25519"'
+docker compose exec openclaw cat /home/node/.ssh/id_ed25519.pub
+```
+
+Verify host keys against the provider's published fingerprints before adding them to
+`known_hosts`. Treat the volume and its backups as secrets. To disable SSH access,
+remove the `openclaw-ssh` mount and recreate the service; keep the volume until rollback
+is no longer needed, then remove it explicitly.
+
 ## Local Model Configuration
 
 Enable Ollama and pull a model first:
@@ -161,6 +182,6 @@ docker compose exec openclaw node dist/index.js models status
 | `401 Unauthorized` from `api.openai.com/v1/responses` | OpenClaw used its embedded API runtime instead of Codex subscription routing | Enable `codex`, apply the explicit `agentRuntime.id: codex` pin, restart, and start a new session |
 | Config warns that Codex is disabled | Codex config exists but the bundled plugin is inactive | Run `plugins enable codex`, validate, and restart OpenClaw |
 
-Do not mount the Docker socket or directories belonging to other services. Back up the
-`openclaw-data` volume because it contains configuration, conversations, and provider
-credentials.
+Do not mount the rootful Docker socket or directories belonging to other services. Back
+up `openclaw-data` because it contains configuration, conversations, and provider
+credentials. Back up `openclaw-ssh` only into encrypted, access-controlled storage.
