@@ -303,9 +303,8 @@ services:
       - DATABASE_URL=postgresql://litellm:${LITELLM_DB_PASSWORD}@litellm-db:5432/litellm
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
       - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
-      - LITELLM_CHAT_MODEL=${LITELLM_CHAT_MODEL}
-      - LITELLM_EMBEDDING_MODEL=${LITELLM_EMBEDDING_MODEL}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "127.0.0.1:4000:4000"
     volumes:
       - "./config/litellm-config.yml:/app/config.yaml:ro"
     networks:

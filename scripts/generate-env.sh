@@ -115,9 +115,6 @@ LITELLM_DB_VERSION=16.15-alpine
 LITELLM_DB_PASSWORD=${LITELLM_DB_PASS}
 LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
 LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
-LITELLM_CHAT_MODEL=openai/gpt-4.1-mini
-LITELLM_EMBEDDING_MODEL=openai/text-embedding-3-small
-OPENAI_API_KEY=
 
 # =============================================================================
 # Qdrant
@@ -183,7 +180,7 @@ API Key:  ${QDRANT_API_KEY}
 === LiteLLM ===
 Master Key: ${LITELLM_MASTER_KEY}
 DB Password: ${LITELLM_DB_PASS}
-Provider API Key: set OPENAI_API_KEY in .env before enabling LiteLLM
+Provider credentials: add through the loopback-only LiteLLM Admin UI
 
 === Demo DB ===
 User:     demo

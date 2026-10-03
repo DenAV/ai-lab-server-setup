@@ -165,28 +165,8 @@ def main() -> int:
     if not isinstance(runtime_models, list):
         errors.append("litellm-config.model_list must be a list")
         runtime_models = []
-    runtime_aliases = {
-        model.get("model_name") for model in runtime_models if isinstance(model, dict)
-    }
-    if runtime_aliases != set(aliases):
-        errors.append("litellm-config model aliases must match gateway.model_aliases")
-    expected_runtime_models = {
-        "lab-chat": "os.environ/LITELLM_CHAT_MODEL",
-        "lab-embedding": "os.environ/LITELLM_EMBEDDING_MODEL",
-    }
-    for model in runtime_models:
-        if not isinstance(model, dict):
-            errors.append("litellm-config.model_list entries must be mappings")
-            continue
-        alias = model.get("model_name")
-        params = model.get("litellm_params")
-        if not isinstance(params, dict):
-            errors.append(f"litellm-config model {alias} must define litellm_params")
-            continue
-        if params.get("model") != expected_runtime_models.get(alias):
-            errors.append(f"litellm-config model {alias} must use its reviewed model variable")
-        if params.get("api_key") != "os.environ/OPENAI_API_KEY":
-            errors.append(f"litellm-config model {alias} must load its provider key from the environment")
+    if runtime_models:
+        errors.append("litellm-config.model_list must remain empty for GUI-managed models")
 
     runtime_settings = runtime_config.get("litellm_settings")
     if not isinstance(runtime_settings, dict):
@@ -202,8 +182,8 @@ def main() -> int:
     else:
         if general_settings.get("master_key") != "os.environ/LITELLM_MASTER_KEY":
             errors.append("litellm-config master key must load from the environment")
-        if general_settings.get("store_model_in_db") is not False:
-            errors.append("litellm-config must keep file-based model configuration authoritative")
+        if general_settings.get("store_model_in_db") is not True:
+            errors.append("litellm-config must enable database-backed GUI model management")
 
     endpoints = contract.get("endpoints")
     if not isinstance(endpoints, dict) or not endpoints:
