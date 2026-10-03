@@ -42,6 +42,7 @@ jobs:
         run: |
           yamllint -d relaxed docker-compose.yml
           yamllint -d relaxed config/components.yml
+          yamllint -d relaxed config/litellm-config.yml
           yamllint -d relaxed config/litellm-contracts.yml
           yamllint -d relaxed examples/cloud-config.yml
 

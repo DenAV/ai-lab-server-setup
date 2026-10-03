@@ -9,7 +9,7 @@
 ## Local Verification
 
 - Run the same offline check as CI with `bash tests/test_repo.sh`; it validates required files, Bash syntax, ShellCheck when installed, YAML, compose config when Docker exists, `.env.example` coverage, secret patterns, and doc links.
-- CI additionally runs `bash -n setup.sh scripts/generate-env.sh scripts/validate.sh scripts/collect-diagnostics.sh`, `shellcheck --severity=error ...`, and `yamllint -d relaxed docker-compose.yml examples/cloud-config.yml`.
+- CI additionally runs `bash -n setup.sh scripts/generate-env.sh scripts/validate.sh scripts/collect-diagnostics.sh`, `shellcheck --severity=error ...`, and `yamllint -d relaxed` for Compose, catalog, LiteLLM, and cloud-init YAML.
 - This workspace may not have Docker installed; `tests/test_repo.sh` skips compose validation when Docker is unavailable.
 
 ## Live Server Workflow
@@ -24,7 +24,7 @@
 - Never re-run `scripts/generate-env.sh` on an existing server unless the user explicitly accepts rotating all stack secrets; it overwrites `.env` and writes `.secrets`.
 - When `.env.example` gains variables, append only the missing values to the live `.env`; do not regenerate the whole file.
 - Do not use `docker system prune --volumes`; repo docs warn this may delete service data.
-- Before major Dify or n8n upgrades, check release notes and back up volumes; `docs/upgrade-dify.md` is the existing Dify major-upgrade path.
+- Before major Dify or n8n upgrades, check release notes and back up volumes; `docs/operations/upgrade-dify.md` is the existing Dify major-upgrade path.
 - Do not commit `.env`, `.secrets`, SSH keys, PEM/key files, or generated `cloud-config.yml`; root `.gitignore` intentionally ignores them.
 
 ## Stack Gotchas

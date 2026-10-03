@@ -1,6 +1,6 @@
 # Project Roadmap
 
-This roadmap implements [ADR-0008](adr/0008-modular-stack-constructor.md). It describes
+This roadmap implements [ADR-0008](../adr/0008-modular-stack-constructor.md). It describes
 delivery order, not calendar commitments. Detailed checkboxes are in [TODO](TODO.md).
 
 ## Phase 0: Baseline and component catalog

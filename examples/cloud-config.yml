@@ -35,7 +35,7 @@ runcmd:
   # --- Optional: auto-deploy AI platform stack ---
   # Uncomment and set your domain + email to deploy Traefik, Dify,
   # n8n and Langfuse automatically during provisioning.
-  # Requires DNS records pointing to this server (see docs/setup-traefik.md).
+  # Requires DNS records pointing to this server (see docs/platforms/setup-traefik.md).
   #
   # - su - lab -c "bash ~/ai-lab-server-setup/scripts/generate-env.sh example.com user@example.com"
-  # - su - lab -c "cd ~/ai-lab-server-setup && docker compose up -d"
+  # - su - lab -c "cd ~/ai-lab-server-setup && COMPOSE_PROFILES=n8n,litellm docker compose up -d"

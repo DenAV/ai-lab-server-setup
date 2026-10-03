@@ -6,6 +6,7 @@ services:
       - /home/lab/client-conversation-analyzer-data:/data/cca
 
   ffmpeg-worker:
+    profiles: ["ffmpeg-worker"]
     build:
       context: ./config/ffmpeg-worker
     image: ai-lab-ffmpeg-worker:latest

@@ -5,6 +5,17 @@ compose_files:
   - docker-compose.workers.yml
   - compose.openclaw-cli.yml
 
+presets:
+  n8n-cloud:
+    description: n8n with the internal LiteLLM gateway
+    components: [traefik, n8n, litellm]
+  dify-cloud:
+    description: Dify with Qdrant and the internal LiteLLM gateway
+    components: [traefik, dify, qdrant, litellm]
+  openclaw:
+    description: Loopback-only OpenClaw Gateway
+    components: [traefik, openclaw]
+
 resource_baseline:
   status: observed-idle
   measured_at: "2026-10-03T09:47:12Z"
@@ -62,7 +73,7 @@ components:
     required: false
     services: [demo-db]
     compose_files: [docker-compose.yml]
-    profile: null
+    profile: demo-db
     dependencies:
       required: []
       optional: []
@@ -101,7 +112,7 @@ components:
       - dify-web
       - dify-worker
     compose_files: [docker-compose.yml]
-    profile: null
+    profile: dify
     dependencies:
       required: [qdrant]
       optional: [ollama]
@@ -173,7 +184,7 @@ components:
     required: false
     services: [ffmpeg-worker]
     compose_files: [docker-compose.workers.yml]
-    profile: null
+    profile: ffmpeg-worker
     dependencies:
       required: [n8n]
       optional: []
@@ -203,7 +214,7 @@ components:
     required: false
     services: [langfuse, langfuse-db]
     compose_files: [docker-compose.yml]
-    profile: null
+    profile: langfuse
     dependencies:
       required: []
       optional: []
@@ -232,12 +243,53 @@ components:
       required: [public-dns]
       conditional: {}
 
+  litellm:
+    description: Internal model gateway and its dedicated PostgreSQL database
+    required: false
+    services: [litellm, litellm-db]
+    compose_files: [docker-compose.yml]
+    profile: litellm
+    dependencies:
+      required: []
+      optional: [langfuse, ollama]
+    conflicts: []
+    networks: [ai-net]
+    storage:
+      - type: volume
+        compose_file: docker-compose.yml
+        source: litellm-db-data
+        target: /var/lib/postgresql/data
+        read_only: false
+        backup: required
+        sensitive: true
+      - type: bind
+        compose_file: docker-compose.yml
+        source: ./config/litellm-config.yml
+        target: /app/config.yaml
+        read_only: true
+        backup: repository
+        sensitive: false
+    routes: []
+    secrets:
+      - LITELLM_DB_PASSWORD
+      - LITELLM_MASTER_KEY
+      - LITELLM_SALT_KEY
+      - OPENAI_API_KEY
+    health_checks: [litellm, litellm-db]
+    resources:
+      status: unmeasured
+      memory_mib_max: null
+      cpu_percent_peak: null
+    host_prerequisites:
+      required: []
+      conditional: {}
+
   n8n:
     description: n8n workflow automation service
     required: false
     services: [n8n]
     compose_files: [docker-compose.workers.yml, docker-compose.yml]
-    profile: null
+    profile: n8n
     dependencies:
       required: []
       optional: [dify, langfuse, ollama, qdrant]
@@ -305,7 +357,7 @@ components:
     required: false
     services: [openclaw]
     compose_files: [compose.openclaw-cli.yml, docker-compose.yml]
-    profile: null
+    profile: openclaw
     dependencies:
       required: []
       optional: [ollama]
@@ -350,7 +402,7 @@ components:
     required: false
     services: [qdrant]
     compose_files: [docker-compose.yml]
-    profile: null
+    profile: qdrant
     dependencies:
       required: []
       optional: []

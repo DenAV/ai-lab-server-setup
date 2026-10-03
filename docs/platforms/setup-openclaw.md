@@ -1,7 +1,7 @@
 # OpenClaw
 
 For an existing dedicated rootless Docker deployment, see
-[Rootless sandbox client](openclaw-rootless-sandbox.md).
+[Rootless sandbox client](../operations/openclaw-rootless-sandbox.md).
 
 ## Overview
 
@@ -149,7 +149,7 @@ is no longer needed, then remove it explicitly.
 Enable Ollama and pull a model first:
 
 ```bash
-# In .env: COMPOSE_PROFILES=local-model
+# In .env: COMPOSE_PROFILES=openclaw,local-model
 docker compose up -d
 docker compose exec ollama ollama pull llama3.2
 ```

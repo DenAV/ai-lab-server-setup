@@ -35,6 +35,7 @@ qdrant_container_running() {
 
 qdrant_api_reachable() {
   local qdrant_api_key=""
+  local qdrant_ip=""
   local qdrant_header=()
 
   if [ -f "${PROJECT_DIR}/.env" ]; then
@@ -48,14 +49,18 @@ qdrant_api_reachable() {
   curl -sf "${qdrant_header[@]}" http://localhost:6333/collections > /dev/null 2>&1 && return 0
 
   if docker ps --format '{{.Names}}' | grep -q '^qdrant-compose$'; then
-    docker exec dify-nginx curl -sf "${qdrant_header[@]}" http://qdrant-compose:6333/collections > /dev/null 2>&1
-    return $?
+    qdrant_ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' qdrant-compose)"
+    if [ -n "${qdrant_ip}" ]; then
+      curl -sf "${qdrant_header[@]}" "http://${qdrant_ip}:6333/collections" > /dev/null 2>&1
+      return $?
+    fi
   fi
 
   return 1
 }
 
-local_model_enabled() {
+profile_enabled() {
+  local expected="$1"
   local profiles="${COMPOSE_PROFILES:-}"
 
   if [ -z "${profiles}" ] && [ -f "${PROJECT_DIR}/.env" ]; then
@@ -63,7 +68,7 @@ local_model_enabled() {
   fi
 
   case ",${profiles// /}," in
-    *,local-model,*) return 0 ;;
+    *,"${expected}",*) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -81,7 +86,9 @@ check "SSH hardened"       "grep -q 'PermitRootLogin no' /etc/ssh/sshd_config"
 echo ""
 echo "Services:"
 check "Docker running"     "systemctl is-active docker"
-check "Qdrant container"   "qdrant_container_running"
+if profile_enabled "qdrant"; then
+  check "Qdrant container" "qdrant_container_running"
+fi
 
 echo ""
 echo "Tools:"
@@ -91,7 +98,9 @@ check "git"                "command -v git"
 
 echo ""
 echo "Network:"
-check "Qdrant API"         "qdrant_api_reachable"
+if profile_enabled "qdrant"; then
+  check "Qdrant API"       "qdrant_api_reachable"
+fi
 
 echo ""
 echo "Environment:"
@@ -104,10 +113,18 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   echo ""
   echo "Platform Stack (docker compose):"
 
-  # Expected containers from docker-compose.yml
-  CONTAINERS="traefik n8n openclaw qdrant-compose demo-db langfuse langfuse-db dify-api dify-worker dify-beat dify-web dify-nginx dify-db dify-redis dify-sandbox dify-plugin-daemon"
-  if local_model_enabled; then
-    CONTAINERS="${CONTAINERS} ollama-compose"
+  CONTAINERS="traefik"
+  profile_enabled "n8n" && CONTAINERS="${CONTAINERS} n8n"
+  profile_enabled "openclaw" && CONTAINERS="${CONTAINERS} openclaw"
+  profile_enabled "qdrant" && CONTAINERS="${CONTAINERS} qdrant-compose"
+  profile_enabled "demo-db" && CONTAINERS="${CONTAINERS} demo-db"
+  profile_enabled "langfuse" && CONTAINERS="${CONTAINERS} langfuse langfuse-db"
+  profile_enabled "litellm" && CONTAINERS="${CONTAINERS} litellm litellm-db"
+  profile_enabled "local-model" && CONTAINERS="${CONTAINERS} ollama-compose"
+  profile_enabled "ffmpeg-worker" && CONTAINERS="${CONTAINERS} ffmpeg-worker"
+  if profile_enabled "dify"; then
+    CONTAINERS="${CONTAINERS} dify-api dify-worker dify-beat dify-web dify-nginx"
+    CONTAINERS="${CONTAINERS} dify-db dify-redis dify-sandbox dify-plugin-daemon"
   fi
 
   for container in ${CONTAINERS}; do
@@ -117,11 +134,22 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   echo ""
   echo "Platform APIs:"
   check "Traefik entrypoint"  "curl -sf -o /dev/null -w '%{http_code}' http://localhost:80 | grep -qE '(301|302|404)'"
-  check "n8n API"             "docker exec n8n node -e \"require('http').get('http://localhost:5678/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null"
-  check "Langfuse API"        "docker exec langfuse node -e \"require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null || docker exec traefik wget -q --spider http://langfuse:3000 2>/dev/null"
-  check "Dify API"            "docker exec dify-nginx curl -sf http://localhost:80 > /dev/null 2>&1 || docker exec dify-nginx wget -q --spider http://localhost:80 2>/dev/null"
-  check "OpenClaw API"        "curl -sf http://127.0.0.1:18789/healthz > /dev/null"
-  if local_model_enabled; then
+  if profile_enabled "n8n"; then
+    check "n8n API"           "docker exec n8n node -e \"require('http').get('http://localhost:5678/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null"
+  fi
+  if profile_enabled "langfuse"; then
+    check "Langfuse API"      "docker exec langfuse node -e \"require('http').get('http://localhost:3000/',r=>{process.exit(r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\" 2>/dev/null || docker exec traefik wget -q --spider http://langfuse:3000 2>/dev/null"
+  fi
+  if profile_enabled "dify"; then
+    check "Dify API"          "docker exec dify-nginx curl -sf http://localhost:80 > /dev/null 2>&1 || docker exec dify-nginx wget -q --spider http://localhost:80 2>/dev/null"
+  fi
+  if profile_enabled "openclaw"; then
+    check "OpenClaw API"      "curl -sf http://127.0.0.1:18789/healthz > /dev/null"
+  fi
+  if profile_enabled "litellm"; then
+    check "LiteLLM API"       "docker exec litellm python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health/readiness', timeout=5)\""
+  fi
+  if profile_enabled "local-model"; then
     check "Ollama API"        "docker exec ollama-compose ollama list"
   fi
 fi

@@ -2,7 +2,7 @@
 
 ## Modular stack constructor
 
-Decision: [ADR-0008](adr/0008-modular-stack-constructor.md). Delivery sequence:
+Decision: [ADR-0008](../adr/0008-modular-stack-constructor.md). Delivery sequence:
 [Roadmap](ROADMAP.md).
 
 ### Discovery and contracts
@@ -19,11 +19,11 @@ Decision: [ADR-0008](adr/0008-modular-stack-constructor.md). Delivery sequence:
 
 ### Compose profiles
 
-- [ ] Keep Traefik outside all optional profiles.
-- [ ] Group n8n, Dify, OpenClaw, LiteLLM, Ollama, Qdrant, Langfuse, demo database, and
+- [x] Keep Traefik outside all optional profiles.
+- [x] Group n8n, Dify, OpenClaw, LiteLLM, Ollama, Qdrant, Langfuse, demo database, and
   workers into stable product-level profiles.
-- [ ] Ensure all internal Dify services share one user-facing Dify selection.
-- [ ] Add LiteLLM Proxy and a dedicated persistent database with pinned versions,
+- [x] Ensure all internal Dify services share one user-facing Dify selection.
+- [x] Add LiteLLM Proxy and a dedicated persistent database with pinned versions,
   health checks, internal networking, backup, and secret handling.
 - [ ] Ensure `docker compose config` succeeds for every supported preset and dependency
   closure without starting unrelated services.
