@@ -253,7 +253,7 @@ components:
       required: []
       optional: [langfuse, ollama]
     conflicts: []
-    networks: [ai-net]
+    networks: [ai-net, traefik-public]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -269,7 +269,7 @@ components:
         read_only: true
         backup: repository
         sensitive: false
-    routes: []
+    routes: ["https://${LITELLM_SUBDOMAIN}.${DOMAIN}"]
     secrets:
       - LITELLM_DB_PASSWORD
       - LITELLM_MASTER_KEY
@@ -280,7 +280,7 @@ components:
       memory_mib_max: null
       cpu_percent_peak: null
     host_prerequisites:
-      required: []
+      required: [public-dns]
       conditional: {}
 
   n8n:

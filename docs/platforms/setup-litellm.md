@@ -1,9 +1,9 @@
 # LiteLLM Setup
 
-LiteLLM is an internal-only model gateway for compatible n8n and Dify clients. The
-`litellm` profile starts LiteLLM `v1.103.2` and a dedicated PostgreSQL database. The API
-and Admin UI bind only to host loopback port 4000; neither service joins
-`traefik-public`.
+LiteLLM is a model gateway for compatible n8n, Dify, and external clients. The `litellm`
+profile starts LiteLLM `v1.103.2` and a dedicated PostgreSQL database. Traefik publishes
+the authenticated API and Admin UI at `https://<litellm-subdomain>.<domain>`; PostgreSQL
+remains internal. Host loopback port 4000 remains available for recovery access.
 
 ## Configuration
 
@@ -37,16 +37,23 @@ profile combinations in [Compose Profiles](../operations/compose-profiles.md).
 
 ## Admin UI And Providers
 
-Open an SSH tunnel from the operator workstation:
+Set `LITELLM_SUBDOMAIN` in `.env` and create its public DNS record. Open:
+
+```text
+https://<litellm-subdomain>.<domain>/ui
+```
+
+Sign in as `admin` and use `LITELLM_MASTER_KEY` as the bootstrap password. Add provider
+credentials under **LLM Credentials**, then add database-backed models under
+**Models + Endpoints**. Credentials are encrypted with `LITELLM_SALT_KEY`.
+
+If public routing is unavailable, use the loopback recovery path:
 
 ```bash
 ssh -L 4000:127.0.0.1:4000 lab@<server-ip>
 ```
 
-Open `http://127.0.0.1:4000/ui`, sign in as `admin`, and use
-`LITELLM_MASTER_KEY` as the bootstrap password. The UI is not publicly routed. Add
-provider credentials under **LLM Credentials**, then add database-backed models under
-**Models + Endpoints**. Credentials are encrypted with `LITELLM_SALT_KEY`.
+Then open `http://127.0.0.1:4000/ui`.
 
 Create these public aliases regardless of the selected upstream provider:
 

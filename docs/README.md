@@ -9,7 +9,7 @@ Detailed setup and configuration guides for each component in the AI Lab stack.
 | [Ollama](platforms/setup-ollama.md) | Optional local LLM inference | internal |
 | [OpenClaw](platforms/setup-openclaw.md) | Personal AI assistant | 18789 (loopback) |
 | [Qdrant](platforms/setup-qdrant.md) | Vector database | 6333 |
-| [LiteLLM](platforms/setup-litellm.md) | Internal model gateway | 4000 (loopback) |
+| [LiteLLM](platforms/setup-litellm.md) | Authenticated model gateway | HTTPS + 4000 (loopback) |
 | [Traefik](platforms/setup-traefik.md) | Reverse proxy + TLS | 80, 443 |
 | [Dify](platforms/setup-dify.md) | AI application platform | `dify.<domain>` |
 | [n8n](platforms/setup-n8n.md) | Workflow automation | `n8n.<domain>` |
