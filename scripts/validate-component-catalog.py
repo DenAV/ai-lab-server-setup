@@ -35,6 +35,7 @@ COMPONENT_FIELDS = {
 }
 REQUIRED_COMPOSE_FILES = {
     "compose.openclaw-cli.yml",
+    "compose.traefik-cloudflare.yml",
     "docker-compose.workers.yml",
     "docker-compose.yml",
 }
@@ -230,6 +231,8 @@ def main() -> int:
     service_files: dict[str, set[str]] = {}
     declared_volumes: set[str] = set()
     declared_networks: set[str] = set()
+    base_compose: dict[str, Any] = {}
+    cloudflare_overlay: dict[str, Any] = {}
     for filename in compose_files:
         path = ROOT / filename
         if not path.is_file():
@@ -242,6 +245,10 @@ def main() -> int:
             continue
         declared_volumes.update((document.get("volumes") or {}).keys())
         declared_networks.update((document.get("networks") or {}).keys())
+        if filename == "docker-compose.yml":
+            base_compose = document
+        if filename == "compose.traefik-cloudflare.yml":
+            cloudflare_overlay = document
         for service_name, config in (document.get("services") or {}).items():
             if not isinstance(config, dict):
                 errors.append(f"{filename}: service {service_name} must be a mapping")
@@ -266,6 +273,44 @@ def main() -> int:
             aggregate["health"] = aggregate["health"] or "healthcheck" in config
             aggregate["env_references"].update(env_references(config))
             service_files.setdefault(service_name, set()).add(filename)
+
+    cloudflare_traefik = (cloudflare_overlay.get("services") or {}).get("traefik") or {}
+    cloudflare_command = cloudflare_traefik.get("command") or []
+    if not any("acme.dnschallenge.provider=cloudflare" in item for item in cloudflare_command):
+        errors.append("Cloudflare overlay must configure the Cloudflare DNS-01 provider")
+    if any("acme.httpchallenge" in item for item in cloudflare_command):
+        errors.append("Cloudflare overlay must not enable HTTP-01")
+    cloudflare_environment = cloudflare_traefik.get("environment") or {}
+    if cloudflare_environment.get("CF_DNS_API_TOKEN_FILE") != (
+        "/run/secrets/cloudflare_dns_api_token"
+    ):
+        errors.append("Cloudflare overlay must inject the DNS token through a file secret")
+    if "CF_DNS_API_TOKEN" in cloudflare_environment:
+        errors.append("Cloudflare overlay must not inject the DNS token as an environment value")
+    cloudflare_secrets = cloudflare_overlay.get("secrets") or {}
+    token_secret = cloudflare_secrets.get("cloudflare_dns_api_token") or {}
+    if token_secret.get("file") != (
+        "${CLOUDFLARE_DNS_API_TOKEN_FILE:?Set the Cloudflare DNS API token file path}"
+    ):
+        errors.append("Cloudflare overlay must source the DNS token from a host file")
+    if "cloudflare_dns_api_token" not in (cloudflare_traefik.get("secrets") or []):
+        errors.append("Cloudflare overlay must mount the DNS token secret into Traefik")
+    base_traefik = (base_compose.get("services") or {}).get("traefik") or {}
+    base_command = base_traefik.get("command") or []
+    challenge_marker = "--certificatesresolvers.letsencrypt.acme."
+
+    def common_traefik_command(command: list[str]) -> set[str]:
+        return {
+            item
+            for item in command
+            if not (
+                item.startswith(f"{challenge_marker}httpchallenge")
+                or item.startswith(f"{challenge_marker}dnschallenge")
+            )
+        }
+
+    if common_traefik_command(base_command) != common_traefik_command(cloudflare_command):
+        errors.append("Cloudflare overlay must preserve all non-challenge Traefik command options")
 
     component_ids = set(components)
     owned_services: dict[str, str] = {}

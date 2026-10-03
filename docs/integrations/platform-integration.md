@@ -1,8 +1,9 @@
 # Integration Guide — Using Services Together
 
-All services in the AI Lab stack share the Docker network `ai-net` and can
-connect to each other using their container names. This guide shows how
-to wire them together.
+Most application services share `ai-net`, while sensitive service boundaries use
+additional private networks. In particular, LiteLLM clients use `litellm-clients`, its
+database uses `litellm-backend`, and optional model or telemetry services use
+`litellm-upstreams`.
 
 ## Service Connection Map
 
@@ -25,6 +26,10 @@ graph TD
         Qdrant["Qdrant :6333"]
     end
 
+    subgraph litellm-clients["litellm-clients private network"]
+        LiteLLM["LiteLLM :4000"]
+    end
+
     Dify -->|LLM + embeddings| Ollama
     Dify -->|vector store| Qdrant
     Dify -.->|traces| Langfuse
@@ -32,6 +37,8 @@ graph TD
     n8n -->|LLM + embeddings| Ollama
     n8n -->|vector store| Qdrant
     n8n -.->|traces| Langfuse
+    n8n -->|virtual key| LiteLLM
+    Dify -->|virtual key| LiteLLM
 
 
     style Internet fill:#6b7280,stroke:#4b5563,color:#fff
@@ -45,7 +52,7 @@ graph TD
 
 ## Internal Connection Reference
 
-All services on the `ai-net` Docker network use container names as hostnames.
+Services on a shared Docker network use container names as hostnames.
 
 | Service | Internal URL | Protocol | Auth |
 |---------|-------------|----------|------|
@@ -55,6 +62,7 @@ All services on the `ai-net` Docker network use container names as hostnames.
 | Langfuse | `https://trace.<domain>` | HTTPS | API key (Public + Secret) |
 | n8n | `https://n8n.<domain>` | HTTPS | Account credentials |
 | Dify | `https://dify.<domain>` | HTTPS | Account credentials |
+| LiteLLM | `http://litellm:4000/v1` | HTTP / OpenAI-compatible | Model-limited virtual key |
 
 > **Note:** Ollama is optional. Set `COMPOSE_PROFILES=local-model` before using
 > the internal endpoint.

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -37,9 +38,12 @@ def resolve_services(compose_files: list[str], profiles: list[str]) -> set[str]:
     for profile in profiles:
         command.extend(["--profile", profile])
     command.extend(["config", "--services"])
+    environment = os.environ.copy()
+    environment["CLOUDFLARE_DNS_API_TOKEN_FILE"] = "/dev/null"
     result = subprocess.run(
         command,
         cwd=ROOT,
+        env=environment,
         check=False,
         capture_output=True,
         text=True,
@@ -115,6 +119,11 @@ def main() -> int:
             ["docker-compose.yml", "compose.openclaw-cli.yml"],
             ["openclaw"],
             {"traefik", "openclaw"},
+        ),
+        "Cloudflare DNS overlay": (
+            ["docker-compose.yml", "compose.traefik-cloudflare.yml"],
+            [],
+            {"traefik"},
         ),
     }
     for case_id, (case_files, case_profiles, expected) in overlay_cases.items():

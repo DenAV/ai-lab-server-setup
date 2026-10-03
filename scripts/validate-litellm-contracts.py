@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "config" / "litellm-contracts.yml"
 CONFIG_PATH = ROOT / "config" / "litellm-config.yml"
 CATALOG_PATH = ROOT / "config" / "components.yml"
+COMPOSE_PATH = ROOT / "docker-compose.yml"
 ENV_PATH = ROOT / ".env.example"
 STATUSES = {"conditional", "declared", "deferred", "eligible", "excluded", "verified"}
 ACTIVE_STATUSES = {"conditional", "declared", "eligible", "verified"}
@@ -95,12 +96,30 @@ def read_versions() -> dict[str, str]:
     return versions
 
 
+def service_networks(service: dict[str, Any]) -> set[str]:
+    networks = service.get("networks") or []
+    return set(networks if isinstance(networks, list) else networks)
+
+
+def service_labels(service: dict[str, Any]) -> dict[str, str]:
+    labels = service.get("labels") or {}
+    if isinstance(labels, dict):
+        return {str(key): str(value) for key, value in labels.items()}
+    result: dict[str, str] = {}
+    for label in labels:
+        key, separator, value = str(label).partition("=")
+        if separator:
+            result[key] = value
+    return result
+
+
 def main() -> int:
     errors: list[str] = []
     try:
         contract = load_yaml(CONTRACT_PATH)
         runtime_config = load_yaml(CONFIG_PATH)
         catalog = load_yaml(CATALOG_PATH)
+        compose = load_yaml(COMPOSE_PATH)
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
@@ -160,6 +179,63 @@ def main() -> int:
     versions = read_versions()
     if versions.get("LITELLM_VERSION") != version:
         errors.append("gateway.evaluated_version must match LITELLM_VERSION in .env.example")
+
+    compose_networks = compose.get("networks") or {}
+    for network_name in ("litellm-backend", "litellm-clients", "litellm-upstreams"):
+        network = compose_networks.get(network_name)
+        if not isinstance(network, dict) or network.get("internal") is not True:
+            errors.append(f"Compose network {network_name} must be declared internal")
+
+    services = compose.get("services") or {}
+    expected_networks = {
+        "litellm-db": {"litellm-backend"},
+        "litellm": {
+            "litellm-backend",
+            "litellm-clients",
+            "litellm-upstreams",
+            "traefik-public",
+        },
+    }
+    for service_name, expected in expected_networks.items():
+        actual = service_networks(services.get(service_name) or {})
+        if actual != expected:
+            errors.append(
+                f"Compose service {service_name} networks are {sorted(actual)}, "
+                f"expected {sorted(expected)}"
+            )
+    expected_clients = {"litellm", "n8n", "dify-api", "dify-plugin-daemon", "dify-worker"}
+    actual_clients = {
+        service_name
+        for service_name, service in services.items()
+        if "litellm-clients" in service_networks(service)
+    }
+    if actual_clients != expected_clients:
+        errors.append(
+            f"litellm-clients members are {sorted(actual_clients)}, "
+            f"expected {sorted(expected_clients)}"
+        )
+    if service_networks(services.get("openclaw") or {}) & {
+        "litellm-backend",
+        "litellm-clients",
+        "litellm-upstreams",
+    }:
+        errors.append("Compose service openclaw must remain outside LiteLLM networks")
+
+    labels = service_labels(services.get("litellm") or {})
+    ui_middlewares = labels.get("traefik.http.routers.litellm-ui.middlewares", "")
+    if "litellm-ui-allowlist@docker" not in ui_middlewares:
+        errors.append("LiteLLM public UI router must use the operator IP allowlist")
+    allowlist = labels.get(
+        "traefik.http.middlewares.litellm-ui-allowlist.ipallowlist.sourcerange"
+    )
+    if allowlist != "${LITELLM_UI_ALLOWLIST:-127.0.0.1/32}":
+        errors.append("LiteLLM UI allowlist must default to loopback-only access")
+    deny_rule = labels.get("traefik.http.routers.litellm-public-deny.rule", "")
+    for blocked_path in ("/openapi.json", "/health", "/public/", "chat/completions"):
+        if blocked_path not in deny_rule:
+            errors.append(f"LiteLLM public deny router must block {blocked_path}")
+    if labels.get("traefik.http.routers.litellm-public-deny.priority") != "200":
+        errors.append("LiteLLM public deny router must take priority over the UI router")
 
     runtime_models = runtime_config.get("model_list")
     if not isinstance(runtime_models, list):

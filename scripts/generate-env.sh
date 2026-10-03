@@ -85,6 +85,7 @@ cat > "${ENV_FILE}" << EOF
 DOMAIN=${DOMAIN}
 ACME_EMAIL=${ACME_EMAIL}
 TIMEZONE=${TIMEZONE}
+CLOUDFLARE_DNS_API_TOKEN_FILE=/home/lab/.config/ai-lab/secrets/cloudflare-dns-api-token
 
 # =============================================================================
 # Demo DB — Shared PostgreSQL for demo projects
@@ -113,6 +114,7 @@ OLLAMA_VERSION=0.34.0
 LITELLM_VERSION=v1.103.2
 LITELLM_DB_VERSION=16.15-alpine
 LITELLM_SUBDOMAIN=lllm
+LITELLM_UI_ALLOWLIST=127.0.0.1/32
 LITELLM_DB_PASSWORD=${LITELLM_DB_PASS}
 LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
 LITELLM_SALT_KEY=${LITELLM_SALT_KEY}

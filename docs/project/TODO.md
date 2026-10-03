@@ -21,7 +21,7 @@ counts must match the roadmap in the same change.
 
 ## P1: Compose profile foundation
 
-**Status:** In progress — 6/8 tasks
+**Status:** In progress — 8/10 tasks
 
 - [x] **P1-01** Keep Traefik outside all optional profiles.
 - [x] **P1-02** Group n8n, Dify, OpenClaw, LiteLLM, Ollama, Qdrant, Langfuse, demo
@@ -32,6 +32,11 @@ counts must match the roadmap in the same change.
 - [x] **P1-05** Define `n8n-cloud`, `dify-cloud`, and `openclaw` preset dependency closures.
 - [x] **P1-06** Verify in CI that `docker compose config` succeeds for every preset and
   overlay without resolving unrelated services.
+- [x] **P1-09** Isolate LiteLLM database, client, and upstream networks; restrict public
+  ingress with a Cloudflare WAF challenge and trusted edge CIDRs; deny declared model,
+  schema, health, and metadata routes.
+- [x] **P1-10** Support default HTTP-01 and optional Cloudflare DNS-01 certificate modes
+  without opening upstream TCP 80 for DNS-01 deployments.
 - [ ] **P1-07** Smoke-test each preset on a clean host and confirm the running service
   closure, persistence, and restart behavior.
 - [ ] **P1-08** Execute the LiteLLM provider, n8n, Dify, virtual-key isolation,
