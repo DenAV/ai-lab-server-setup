@@ -52,6 +52,7 @@ REQUIRED_FILES=(
   "scripts/validate-compose-presets.py"
   "scripts/validate-doc-links.py"
   "scripts/validate-litellm-contracts.py"
+  "scripts/validate-project-tracking.py"
   "examples/cloud-config.yml"
   "docs/README.md"
   "docs/project/ROADMAP.md"
@@ -279,6 +280,12 @@ if python3 "${PROJECT_DIR}/scripts/validate-doc-links.py"; then
   pass "Markdown relative links valid"
 else
   fail "Markdown relative links invalid"
+fi
+
+if python3 "${PROJECT_DIR}/scripts/validate-project-tracking.py"; then
+  pass "Roadmap and TODO tracking consistent"
+else
+  fail "Roadmap and TODO tracking inconsistent"
 fi
 
 # =========================================================================
