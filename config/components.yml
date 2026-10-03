@@ -5,6 +5,45 @@ compose_files:
   - docker-compose.workers.yml
   - compose.openclaw-cli.yml
 
+resource_baseline:
+  status: observed-idle
+  measured_at: "2026-10-03T09:47:12Z"
+  source_revision: 3956f298f138b219ba343b1e07c27acef67d3753
+  samples: 6
+  interval_seconds: 10
+  host:
+    vcpus: 4
+    memory_mib: 7746
+    swap_mib: 4096
+    root_disk_gib: 149.9
+    root_disk_available_gib: 52.8
+    docker_version: 29.8.0
+    compose_version: 5.5.1
+  stack:
+    managed_memory_mib_max: 4031
+    managed_cpu_percent_peak: 22.2
+    logical_image_size_mib: 15579
+    persistent_data_mib: 1999
+  host_classes:
+    minimum:
+      vcpus: 2
+      memory_mib: 4096
+      disk_gib: 40
+      evidence: projected
+      fit: base-components-only
+    recommended:
+      vcpus: 4
+      memory_mib: 8192
+      disk_gib: 80
+      evidence: observed
+      fit: full-cloud-stack-idle
+    expanded:
+      vcpus: 8
+      memory_mib: 16384
+      disk_gib: 80
+      evidence: projected
+      fit: full-cloud-stack-with-headroom
+
 host_prerequisites:
   cca-host-path: Shared n8n and FFmpeg worker data path exists with UID 1000 access
   dify-volume-ownership: Dify storage volume is writable by the image runtime UID
@@ -40,6 +79,10 @@ components:
     routes: []
     secrets: [DEMO_DB_PASSWORD]
     health_checks: [demo-db]
+    resources:
+      status: observed-idle
+      memory_mib_max: 10.4
+      cpu_percent_peak: 3.54
     host_prerequisites:
       required: []
       conditional: {}
@@ -117,6 +160,10 @@ components:
       - DIFY_SECRET_KEY
       - QDRANT_API_KEY
     health_checks: [dify-api, dify-db, dify-nginx, dify-redis, dify-sandbox]
+    resources:
+      status: observed-idle
+      memory_mib_max: 2562.0
+      cpu_percent_peak: 13.51
     host_prerequisites:
       required: [dify-volume-ownership, public-dns]
       conditional: {}
@@ -143,6 +190,10 @@ components:
     routes: []
     secrets: []
     health_checks: [ffmpeg-worker]
+    resources:
+      status: observed-idle
+      memory_mib_max: 13.4
+      cpu_percent_peak: 4.88
     host_prerequisites:
       required: [cca-host-path, ffmpeg-image-build]
       conditional: {}
@@ -173,6 +224,10 @@ components:
       - LANGFUSE_SALT
       - LANGFUSE_SECRET_KEY
     health_checks: [langfuse, langfuse-db]
+    resources:
+      status: observed-idle
+      memory_mib_max: 181.8
+      cpu_percent_peak: 3.37
     host_prerequisites:
       required: [public-dns]
       conditional: {}
@@ -206,6 +261,10 @@ components:
     routes: ["https://n8n.${DOMAIN}"]
     secrets: [N8N_BASIC_AUTH_PASSWORD, N8N_ENCRYPTION_KEY]
     health_checks: [n8n]
+    resources:
+      status: observed-idle
+      memory_mib_max: 411.7
+      cpu_percent_peak: 4.54
     host_prerequisites:
       required: [public-dns]
       conditional:
@@ -233,6 +292,10 @@ components:
     routes: []
     secrets: []
     health_checks: [ollama]
+    resources:
+      status: unmeasured
+      memory_mib_max: null
+      cpu_percent_peak: null
     host_prerequisites:
       required: [model-capacity]
       conditional: {}
@@ -273,6 +336,10 @@ components:
     routes: ["http://127.0.0.1:18789"]
     secrets: [OPENCLAW_GATEWAY_TOKEN]
     health_checks: [openclaw]
+    resources:
+      status: observed-idle
+      memory_mib_max: 762.2
+      cpu_percent_peak: 1.38
     host_prerequisites:
       required: [loopback-ssh-tunnel]
       conditional:
@@ -300,6 +367,10 @@ components:
     routes: []
     secrets: [QDRANT_API_KEY]
     health_checks: []
+    resources:
+      status: observed-idle
+      memory_mib_max: 31.7
+      cpu_percent_peak: 0.19
     host_prerequisites:
       required: []
       conditional: {}
@@ -333,6 +404,10 @@ components:
     routes: ["http://*:80", "https://*:443"]
     secrets: []
     health_checks: []
+    resources:
+      status: observed-idle
+      memory_mib_max: 57.6
+      cpu_percent_peak: 0.27
     host_prerequisites:
       required:
         - docker-api-compat

@@ -24,6 +24,9 @@ Works with any cloud provider or bare metal — not tied to a specific platform.
 | **CPX32** | **4** | **8 GB** | **Full stack with cloud models (recommended)** |
 | CPX42 | 8 | 16 GB | Full stack + larger LLM models |
 
+See [Resource Baselines](docs/resource-baselines.md) for the measured idle footprint,
+host-class evidence, and sizing limitations. Local-model capacity remains model-specific.
+
 ## Quick Start
 
 ### Option A: Cloud-Init (Fully Automatic)

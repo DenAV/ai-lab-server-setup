@@ -30,6 +30,7 @@ COMPONENT_FIELDS = {
     "routes",
     "secrets",
     "health_checks",
+    "resources",
     "host_prerequisites",
 }
 REQUIRED_COMPOSE_FILES = {
@@ -56,6 +57,8 @@ BACKUP_CLASSES = {
 }
 ENV_REFERENCE = re.compile(r"\$\{([A-Z][A-Z0-9_]*)")
 SECRET_VARIABLE = re.compile(r"PASSWORD|SECRET|TOKEN|KEY|SALT")
+RESOURCE_STATUSES = {"observed-idle", "unmeasured"}
+HOST_CLASS_EVIDENCE = {"observed", "projected"}
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -102,6 +105,92 @@ def env_references(value: Any) -> set[str]:
     return set()
 
 
+def non_negative_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0
+
+
+def validate_resource_baseline(value: Any, errors: list[str]) -> None:
+    prefix = "resource_baseline"
+    expected_fields = {
+        "status",
+        "measured_at",
+        "source_revision",
+        "samples",
+        "interval_seconds",
+        "host",
+        "stack",
+        "host_classes",
+    }
+    if not isinstance(value, dict) or set(value) != expected_fields:
+        errors.append(f"{prefix} must contain exactly {sorted(expected_fields)}")
+        return
+    if value["status"] != "observed-idle":
+        errors.append(f"{prefix}.status must be observed-idle")
+    if not isinstance(value["measured_at"], str) or not value["measured_at"].endswith("Z"):
+        errors.append(f"{prefix}.measured_at must be a UTC timestamp")
+    if not isinstance(value["source_revision"], str) or not re.fullmatch(
+        r"[0-9a-f]{40}", value["source_revision"]
+    ):
+        errors.append(f"{prefix}.source_revision must be a full Git commit hash")
+    for field in ("samples", "interval_seconds"):
+        if not isinstance(value[field], int) or isinstance(value[field], bool) or value[field] <= 0:
+            errors.append(f"{prefix}.{field} must be a positive integer")
+
+    host_fields = {
+        "vcpus",
+        "memory_mib",
+        "swap_mib",
+        "root_disk_gib",
+        "root_disk_available_gib",
+        "docker_version",
+        "compose_version",
+    }
+    host = value["host"]
+    if not isinstance(host, dict) or set(host) != host_fields:
+        errors.append(f"{prefix}.host must contain exactly {sorted(host_fields)}")
+    else:
+        for field in host_fields - {"docker_version", "compose_version"}:
+            if not non_negative_number(host[field]):
+                errors.append(f"{prefix}.host.{field} must be a non-negative number")
+        for field in ("docker_version", "compose_version"):
+            if not isinstance(host[field], str) or not host[field]:
+                errors.append(f"{prefix}.host.{field} must be a non-empty string")
+
+    stack_fields = {
+        "managed_memory_mib_max",
+        "managed_cpu_percent_peak",
+        "logical_image_size_mib",
+        "persistent_data_mib",
+    }
+    stack = value["stack"]
+    if not isinstance(stack, dict) or set(stack) != stack_fields:
+        errors.append(f"{prefix}.stack must contain exactly {sorted(stack_fields)}")
+    else:
+        for field in stack_fields:
+            if not non_negative_number(stack[field]):
+                errors.append(f"{prefix}.stack.{field} must be a non-negative number")
+
+    host_classes = value["host_classes"]
+    if not isinstance(host_classes, dict) or not host_classes:
+        errors.append(f"{prefix}.host_classes must be a non-empty mapping")
+    else:
+        class_fields = {"vcpus", "memory_mib", "disk_gib", "evidence", "fit"}
+        for class_id, host_class in host_classes.items():
+            class_prefix = f"{prefix}.host_classes.{class_id}"
+            if not isinstance(host_class, dict) or set(host_class) != class_fields:
+                errors.append(f"{class_prefix} must contain exactly {sorted(class_fields)}")
+                continue
+            for field in ("vcpus", "memory_mib", "disk_gib"):
+                if not non_negative_number(host_class[field]) or host_class[field] == 0:
+                    errors.append(f"{class_prefix}.{field} must be a positive number")
+            if host_class["evidence"] not in HOST_CLASS_EVIDENCE:
+                errors.append(
+                    f"{class_prefix}.evidence must be one of {sorted(HOST_CLASS_EVIDENCE)}"
+                )
+            if not isinstance(host_class["fit"], str) or not host_class["fit"]:
+                errors.append(f"{class_prefix}.fit must be a non-empty string")
+
+
 def main() -> int:
     errors: list[str] = []
     try:
@@ -112,6 +201,8 @@ def main() -> int:
 
     if catalog.get("schema_version") != 1:
         errors.append("schema_version must be 1")
+
+    validate_resource_baseline(catalog.get("resource_baseline"), errors)
 
     compose_files = string_list(catalog.get("compose_files"), "compose_files", errors)
     if set(compose_files) != REQUIRED_COMPOSE_FILES:
@@ -232,6 +323,25 @@ def main() -> int:
                 f"{prefix}.health_checks is {sorted(health_checks)}, "
                 f"expected {sorted(expected_health)}"
             )
+
+        resources = component.get("resources")
+        resource_fields = {"status", "memory_mib_max", "cpu_percent_peak"}
+        if not isinstance(resources, dict) or set(resources) != resource_fields:
+            errors.append(f"{prefix}.resources must contain exactly {sorted(resource_fields)}")
+        else:
+            status = resources["status"]
+            if status not in RESOURCE_STATUSES:
+                errors.append(
+                    f"{prefix}.resources.status must be one of {sorted(RESOURCE_STATUSES)}"
+                )
+            for field in ("memory_mib_max", "cpu_percent_peak"):
+                metric = resources[field]
+                if status == "observed-idle" and not non_negative_number(metric):
+                    errors.append(
+                        f"{prefix}.resources.{field} must be a non-negative number when observed"
+                    )
+                if status == "unmeasured" and metric is not None:
+                    errors.append(f"{prefix}.resources.{field} must be null when unmeasured")
 
         profile = component.get("profile")
         if profile is not None and not isinstance(profile, str):

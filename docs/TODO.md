@@ -14,7 +14,8 @@ Decision: [ADR-0008](adr/0008-modular-stack-constructor.md). Delivery sequence:
 - [x] Define supported LiteLLM client/provider contracts; do not equate generic
   OpenAI-compatible APIs with full feature compatibility. The contract remains
   `declared-not-executed` until Phase 1 acceptance tests pass.
-- [ ] Measure baseline and representative stack resource usage on supported VPS sizes.
+- [x] Measure baseline and representative stack resource usage on supported VPS sizes;
+  treat idle observations as sizing evidence, not deployment minimums or load tests.
 
 ### Compose profiles
 
