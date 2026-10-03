@@ -14,6 +14,7 @@ The root contains:
 | `schema_version` | Catalog format version; currently `1` |
 | `compose_files` | Repository Compose files included in drift validation |
 | `host_prerequisites` | Stable prerequisite IDs and operator-facing descriptions |
+| `resource_baseline` | Versioned measurement context, stack totals, and supported host classes |
 | `components` | User-selectable product IDs mapped to their current contracts |
 
 Every component records:
@@ -31,6 +32,7 @@ Every component records:
 | `routes` | Public or loopback endpoints exposed by the component |
 | `secrets` | Environment variable names only; never values |
 | `health_checks` | Owned services with Compose health checks |
+| `resources` | Observed idle memory/CPU metrics, or an explicit unmeasured status |
 | `host_prerequisites` | Required IDs plus Compose-file-conditional prerequisite IDs |
 
 `scripts/validate-component-catalog.py` validates the schema and detects drift in
@@ -55,6 +57,10 @@ the base, worker, OpenClaw, and combined Compose models in CI.
 LiteLLM is intentionally absent because no managed service exists yet. Add it only with
 its pinned images, database, secrets, health checks, storage, and Compose contract in
 Phase 1.
+
+Resource values and their measurement limits are documented in
+[Resource Baselines](resource-baselines.md). The validator requires every component to
+record observed metrics or declare that it remains unmeasured.
 
 ## Maintenance
 

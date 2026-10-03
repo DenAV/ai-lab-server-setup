@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Measured idle resource baseline, component metrics, and evidence-qualified VPS sizing
+- Versioned LiteLLM client/provider contracts and acceptance-test gates
 - Machine-readable component catalog with Compose drift validation in CI
 - Guidance for dedicated least-privilege credentials in persistent OpenClaw SSH storage
 - Optional rootless OpenClaw sandbox client image, Docker CLI overlay, and operating guide

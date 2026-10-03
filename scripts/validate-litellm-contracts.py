@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+"""Validate the versioned LiteLLM integration contract."""
+
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+try:
+    import yaml
+except ModuleNotFoundError:
+    print("ERROR: PyYAML is required to validate LiteLLM contracts", file=sys.stderr)
+    raise SystemExit(2)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_PATH = ROOT / "config" / "litellm-contracts.yml"
+CATALOG_PATH = ROOT / "config" / "components.yml"
+ENV_PATH = ROOT / ".env.example"
+STATUSES = {"conditional", "declared", "deferred", "eligible", "excluded", "verified"}
+ACTIVE_STATUSES = {"conditional", "declared", "eligible", "verified"}
+ROOT_FIELDS = {
+    "schema_version",
+    "reviewed_on",
+    "verification_status",
+    "gateway",
+    "endpoints",
+    "clients",
+    "providers",
+    "observability",
+    "security_controls",
+    "acceptance_tests",
+    "sources",
+}
+
+
+def load_yaml(path: Path) -> dict[str, Any]:
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError(f"cannot read {path.relative_to(ROOT)}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"{path.relative_to(ROOT)} must contain a mapping")
+    return data
+
+
+def string_list(value: Any, field: str, errors: list[str]) -> list[str]:
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        errors.append(f"{field} must be a list of strings")
+        return []
+    if len(value) != len(set(value)):
+        errors.append(f"{field} contains duplicate values")
+    return value
+
+
+def validate_status_contract(
+    contract: Any,
+    field: str,
+    test_ids: set[str],
+    errors: list[str],
+    *,
+    endpoint_ids: set[str] | None = None,
+) -> None:
+    if not isinstance(contract, dict):
+        errors.append(f"{field} must be a mapping")
+        return
+    status = contract.get("status")
+    if status not in STATUSES:
+        errors.append(f"{field}.status must be one of {sorted(STATUSES)}")
+    tests = string_list(contract.get("tests"), f"{field}.tests", errors)
+    unknown_tests = set(tests) - test_ids
+    if unknown_tests:
+        errors.append(f"{field}.tests references unknown tests: {sorted(unknown_tests)}")
+    if status in ACTIVE_STATUSES and not tests:
+        errors.append(f"{field} requires acceptance tests for status {status}")
+    if endpoint_ids is not None:
+        endpoints = string_list(contract.get("endpoints"), f"{field}.endpoints", errors)
+        unknown_endpoints = set(endpoints) - endpoint_ids
+        if unknown_endpoints:
+            errors.append(
+                f"{field}.endpoints references unknown endpoints: {sorted(unknown_endpoints)}"
+            )
+        string_list(contract.get("requirements"), f"{field}.requirements", errors)
+
+
+def read_versions() -> dict[str, str]:
+    versions: dict[str, str] = {}
+    for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
+        match = re.fullmatch(r"([A-Z][A-Z0-9_]*)=(.*)", line)
+        if match:
+            versions[match.group(1)] = match.group(2)
+    return versions
+
+
+def main() -> int:
+    errors: list[str] = []
+    try:
+        contract = load_yaml(CONTRACT_PATH)
+        catalog = load_yaml(CATALOG_PATH)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+    if set(contract) != ROOT_FIELDS:
+        errors.append(
+            f"root fields are {sorted(contract)}, expected {sorted(ROOT_FIELDS)}"
+        )
+    if contract.get("schema_version") != 1:
+        errors.append("schema_version must be 1")
+    reviewed_on = contract.get("reviewed_on")
+    if not isinstance(reviewed_on, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", reviewed_on):
+        errors.append("reviewed_on must be an ISO date string")
+    if contract.get("verification_status") != "declared-not-executed":
+        errors.append("verification_status must remain declared-not-executed until live acceptance")
+
+    tests = contract.get("acceptance_tests")
+    if not isinstance(tests, dict) or not tests or any(
+        not isinstance(key, str) or not isinstance(value, str) or not value
+        for key, value in (tests or {}).items()
+    ):
+        errors.append("acceptance_tests must map IDs to non-empty descriptions")
+        tests = {}
+    test_ids = set(tests)
+
+    gateway = contract.get("gateway")
+    gateway_fields = {
+        "evaluated_version",
+        "evaluated_image",
+        "internal_base_url",
+        "client_auth",
+        "admin_auth",
+        "provider_credentials",
+        "model_aliases",
+    }
+    if not isinstance(gateway, dict) or set(gateway) != gateway_fields:
+        errors.append(f"gateway must contain {sorted(gateway_fields)}")
+        gateway = {}
+    version = gateway.get("evaluated_version")
+    image = gateway.get("evaluated_image")
+    if not isinstance(version, str) or not re.fullmatch(r"v\d+\.\d+\.\d+", version):
+        errors.append("gateway.evaluated_version must be a stable vMAJOR.MINOR.PATCH tag")
+    if not isinstance(image, str) or image.endswith(":latest") or not image.endswith(f":{version}"):
+        errors.append("gateway.evaluated_image must use the evaluated non-latest version")
+    if gateway.get("internal_base_url") != "http://litellm:4000/v1":
+        errors.append("gateway.internal_base_url must use internal service DNS and /v1")
+    if gateway.get("client_auth") != "virtual-key":
+        errors.append("gateway.client_auth must be virtual-key")
+    if gateway.get("admin_auth") != "master-key":
+        errors.append("gateway.admin_auth must be master-key")
+    if gateway.get("provider_credentials") != "gateway-only":
+        errors.append("gateway.provider_credentials must be gateway-only")
+    aliases = string_list(gateway.get("model_aliases"), "gateway.model_aliases", errors)
+    if set(aliases) != {"lab-chat", "lab-embedding"}:
+        errors.append("gateway.model_aliases must define lab-chat and lab-embedding")
+
+    endpoints = contract.get("endpoints")
+    if not isinstance(endpoints, dict) or not endpoints:
+        errors.append("endpoints must be a non-empty mapping")
+        endpoints = {}
+    endpoint_ids = set(endpoints)
+    for endpoint_id, endpoint in endpoints.items():
+        field = f"endpoints.{endpoint_id}"
+        expected_fields = {"method", "path", "status", "auth", "model_call", "tests", "notes"}
+        if not isinstance(endpoint, dict) or set(endpoint) != expected_fields:
+            errors.append(f"{field} must contain {sorted(expected_fields)}")
+            continue
+        validate_status_contract(endpoint, field, test_ids, errors)
+        if endpoint["method"] not in {"GET", "POST"}:
+            errors.append(f"{field}.method must be GET or POST")
+        if not isinstance(endpoint["path"], str) or not endpoint["path"].startswith("/"):
+            errors.append(f"{field}.path must be absolute")
+        if endpoint["auth"] not in {"master-key", "none", "virtual-key"}:
+            errors.append(f"{field}.auth has an unsupported value")
+        if not isinstance(endpoint["model_call"], bool):
+            errors.append(f"{field}.model_call must be a boolean")
+        if not isinstance(endpoint["notes"], str) or not endpoint["notes"]:
+            errors.append(f"{field}.notes must be non-empty")
+
+    component_ids = set((catalog.get("components") or {}).keys())
+    versions = read_versions()
+    version_variables = {
+        "dify": "DIFY_VERSION",
+        "langfuse": "LANGFUSE_VERSION",
+        "n8n": "N8N_VERSION",
+        "openclaw": "OPENCLAW_VERSION",
+    }
+    clients = contract.get("clients")
+    if not isinstance(clients, dict) or not clients:
+        errors.append("clients must be a non-empty mapping")
+        clients = {}
+    for client_id, client in clients.items():
+        field = f"clients.{client_id}"
+        expected_fields = {"component", "version", "adapter", "credential", "capabilities"}
+        if not isinstance(client, dict) or set(client) != expected_fields:
+            errors.append(f"{field} must contain {sorted(expected_fields)}")
+            continue
+        component = client["component"]
+        if component not in component_ids:
+            errors.append(f"{field}.component references unknown component {component}")
+        expected_version = versions.get(version_variables.get(component, ""))
+        if str(client["version"]) != expected_version:
+            errors.append(
+                f"{field}.version is {client['version']}, expected {expected_version} from .env.example"
+            )
+        if not isinstance(client["adapter"], str) or not client["adapter"]:
+            errors.append(f"{field}.adapter must be non-empty")
+        if not isinstance(client["credential"], str) or not client["credential"]:
+            errors.append(f"{field}.credential must be non-empty")
+        capabilities = client["capabilities"]
+        if not isinstance(capabilities, dict) or not capabilities:
+            errors.append(f"{field}.capabilities must be a non-empty mapping")
+            continue
+        for capability_id, capability in capabilities.items():
+            capability_fields = {"status", "endpoints", "tests", "requirements"}
+            if not isinstance(capability, dict) or set(capability) != capability_fields:
+                errors.append(
+                    f"{field}.capabilities.{capability_id} must contain "
+                    f"{sorted(capability_fields)}"
+                )
+                continue
+            validate_status_contract(
+                capability,
+                f"{field}.capabilities.{capability_id}",
+                test_ids,
+                errors,
+                endpoint_ids=endpoint_ids,
+            )
+
+    providers = contract.get("providers")
+    if not isinstance(providers, dict) or not providers:
+        errors.append("providers must be a non-empty mapping")
+        providers = {}
+    for provider_id, provider in providers.items():
+        field = f"providers.{provider_id}"
+        if not isinstance(provider, dict) or set(provider) != {"auth", "capabilities", "notes"}:
+            errors.append(f"{field} must contain auth, capabilities, and notes")
+            continue
+        if not isinstance(provider["auth"], str) or not provider["auth"]:
+            errors.append(f"{field}.auth must be non-empty")
+        if not isinstance(provider["notes"], str) or not provider["notes"]:
+            errors.append(f"{field}.notes must be non-empty")
+        capabilities = provider["capabilities"]
+        if not isinstance(capabilities, dict) or not capabilities:
+            errors.append(f"{field}.capabilities must be a non-empty mapping")
+            continue
+        for capability_id, capability in capabilities.items():
+            if not isinstance(capability, dict) or set(capability) != {"status", "tests"}:
+                errors.append(f"{field}.capabilities.{capability_id} must contain status and tests")
+                continue
+            validate_status_contract(
+                capability, f"{field}.capabilities.{capability_id}", test_ids, errors
+            )
+
+    observability = contract.get("observability")
+    if not isinstance(observability, dict) or not observability:
+        errors.append("observability must be a non-empty mapping")
+        observability = {}
+    for integration_id, integration in observability.items():
+        field = f"observability.{integration_id}"
+        expected_fields = {"component", "version", "status", "tests", "reason"}
+        if not isinstance(integration, dict) or set(integration) != expected_fields:
+            errors.append(f"{field} must contain {sorted(expected_fields)}")
+            continue
+        validate_status_contract(integration, field, test_ids, errors)
+        component = integration["component"]
+        if component not in component_ids:
+            errors.append(f"{field}.component references unknown component {component}")
+        expected_version = versions.get(version_variables.get(component, ""))
+        if str(integration["version"]) != expected_version:
+            errors.append(f"{field}.version must match .env.example version {expected_version}")
+        if not isinstance(integration["reason"], str) or not integration["reason"]:
+            errors.append(f"{field}.reason must be non-empty")
+
+    controls = string_list(contract.get("security_controls"), "security_controls", errors)
+    if not controls:
+        errors.append("security_controls must not be empty")
+    if not any("turn_off_message_logging" in control for control in controls):
+        errors.append("security_controls must require turn_off_message_logging")
+    if "logging-content-redaction" not in test_ids:
+        errors.append("acceptance_tests must verify prompt and response redaction")
+    model_tests = set((endpoints.get("models") or {}).get("tests") or [])
+    if "unauthenticated-model-deny" not in model_tests:
+        errors.append("endpoints.models must test unauthenticated access denial")
+
+    sources = contract.get("sources")
+    if not isinstance(sources, list) or not sources:
+        errors.append("sources must be a non-empty list")
+        sources = []
+    for index, source in enumerate(sources):
+        field = f"sources[{index}]"
+        if not isinstance(source, dict) or set(source) != {"title", "url", "accessed"}:
+            errors.append(f"{field} must contain title, url, and accessed")
+            continue
+        if not isinstance(source["title"], str) or not source["title"]:
+            errors.append(f"{field}.title must be non-empty")
+        if not isinstance(source["url"], str) or not source["url"].startswith("https://"):
+            errors.append(f"{field}.url must use HTTPS")
+        if source["accessed"] != reviewed_on:
+            errors.append(f"{field}.accessed must match reviewed_on")
+
+    if errors:
+        for error in errors:
+            print(f"ERROR: {error}", file=sys.stderr)
+        return 1
+
+    print(
+        f"LiteLLM contracts valid: {len(clients)} clients, {len(providers)} providers, "
+        f"{len(endpoints)} endpoint contracts"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

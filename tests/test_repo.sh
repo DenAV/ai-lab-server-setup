@@ -40,6 +40,7 @@ REQUIRED_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "config/components.yml"
+  "config/litellm-contracts.yml"
   "config/fail2ban.conf"
   "config/bash_aliases"
   "config/dify-nginx.conf"
@@ -47,6 +48,7 @@ REQUIRED_FILES=(
   "scripts/validate.sh"
   "scripts/collect-diagnostics.sh"
   "scripts/validate-component-catalog.py"
+  "scripts/validate-litellm-contracts.py"
   "examples/cloud-config.yml"
   "docs/README.md"
 )
@@ -106,6 +108,7 @@ YAML_FILES=(
   "docker-compose.workers.yml"
   "compose.openclaw-cli.yml"
   "config/components.yml"
+  "config/litellm-contracts.yml"
   "examples/cloud-config.yml"
 )
 
@@ -135,10 +138,11 @@ fi
 echo ""
 echo "Component catalog:"
 if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
-  if python3 "${PROJECT_DIR}/scripts/validate-component-catalog.py"; then
-    pass "component catalog matches Compose"
+  if python3 "${PROJECT_DIR}/scripts/validate-component-catalog.py" &&
+    python3 "${PROJECT_DIR}/scripts/validate-litellm-contracts.py"; then
+    pass "component catalog and LiteLLM contracts valid"
   else
-    fail "component catalog validation failed"
+    fail "component catalog or LiteLLM contract validation failed"
   fi
 else
   fail "python3 and PyYAML are required for component catalog validation"

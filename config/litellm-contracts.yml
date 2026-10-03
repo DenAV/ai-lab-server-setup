@@ -1,0 +1,324 @@
+schema_version: 1
+reviewed_on: "2026-10-02"
+verification_status: declared-not-executed
+
+gateway:
+  evaluated_version: v1.103.2
+  evaluated_image: ghcr.io/berriai/litellm:v1.103.2
+  internal_base_url: http://litellm:4000/v1
+  client_auth: virtual-key
+  admin_auth: master-key
+  provider_credentials: gateway-only
+  model_aliases: [lab-chat, lab-embedding]
+
+endpoints:
+  liveliness:
+    method: GET
+    path: /health/liveliness
+    status: declared
+    auth: none
+    model_call: false
+    tests: [gateway-liveliness]
+    notes: Process probe only; it does not validate dependencies or providers
+  readiness:
+    method: GET
+    path: /health/readiness
+    status: declared
+    auth: none
+    model_call: false
+    tests: [gateway-readiness]
+    notes: Must return 503 when the configured database is unavailable
+  models:
+    method: GET
+    path: /v1/models
+    status: declared
+    auth: virtual-key
+    model_call: false
+    tests: [unauthenticated-model-deny, client-model-list, key-model-deny]
+    notes: Response must expose only aliases allowed for the calling key
+  chat-completions:
+    method: POST
+    path: /v1/chat/completions
+    status: declared
+    auth: virtual-key
+    model_call: true
+    tests: [chat-basic]
+    notes: Initial text generation contract
+  embeddings:
+    method: POST
+    path: /v1/embeddings
+    status: declared
+    auth: virtual-key
+    model_call: true
+    tests: [embedding-basic, embedding-dimension]
+    notes: Indexing and querying must use the same alias and dimensions
+  model-health:
+    method: GET
+    path: /health
+    status: conditional
+    auth: virtual-key
+    model_call: true
+    tests: [model-health-cost]
+    notes: Operator-only diagnostic because it calls configured providers and consumes tokens
+  responses:
+    method: POST
+    path: /v1/responses
+    status: deferred
+    auth: virtual-key
+    model_call: true
+    tests: []
+    notes: Gateway support does not establish n8n or Dify compatibility
+  rerank:
+    method: POST
+    path: /rerank
+    status: deferred
+    auth: virtual-key
+    model_call: true
+    tests: []
+    notes: Rerank requires a separate request and client contract
+  image-generations:
+    method: POST
+    path: /v1/images/generations
+    status: deferred
+    auth: virtual-key
+    model_call: true
+    tests: []
+    notes: Image generation requires a separate request and client contract
+  audio-transcriptions:
+    method: POST
+    path: /v1/audio/transcriptions
+    status: deferred
+    auth: virtual-key
+    model_call: true
+    tests: []
+    notes: Speech-to-text requires a separate request and client contract
+  audio-speech:
+    method: POST
+    path: /v1/audio/speech
+    status: deferred
+    auth: virtual-key
+    model_call: true
+    tests: []
+    notes: Text-to-speech requires a separate request and client contract
+
+clients:
+  n8n:
+    component: n8n
+    version: 2.40.7
+    adapter: builtin-openai@2.40.7
+    credential: dedicated-model-limited-virtual-key
+    capabilities:
+      chat-completions:
+        status: declared
+        endpoints: [models, chat-completions]
+        tests: [n8n-chat]
+        requirements:
+          - Set the OpenAI credential Base URL to http://litellm:4000/v1
+          - Disable Use Responses API on the OpenAI Chat Model node
+      embeddings:
+        status: declared
+        endpoints: [models, embeddings]
+        tests: [n8n-embedding]
+        requirements:
+          - Set the Embeddings OpenAI Base URL to http://litellm:4000/v1
+      streaming:
+        status: conditional
+        endpoints: [chat-completions]
+        tests: [n8n-streaming]
+        requirements: [Test the exact workflow and model alias]
+      tool-calling:
+        status: conditional
+        endpoints: [chat-completions]
+        tests: [n8n-tool-round-trip]
+        requirements: [Test both tool request and tool-result completion]
+      responses:
+        status: deferred
+        endpoints: [responses]
+        tests: []
+        requirements: [Do not enable the node Responses API toggle]
+  dify:
+    component: dify
+    version: 1.13.3
+    adapter: openai_api_compatible@0.0.68
+    credential: dedicated-model-limited-virtual-key
+    capabilities:
+      chat-completions:
+        status: declared
+        endpoints: [models, chat-completions]
+        tests: [dify-chat]
+        requirements:
+          - Use the OpenAI API Compatible provider plugin
+          - Set the LLM API base to http://litellm:4000/v1
+      embeddings:
+        status: declared
+        endpoints: [models, embeddings]
+        tests: [dify-embedding, dify-rag-round-trip]
+        requirements:
+          - Set the embedding API base to http://litellm:4000 to avoid a duplicated /v1 path
+      streaming:
+        status: conditional
+        endpoints: [chat-completions]
+        tests: [dify-streaming]
+        requirements: [Test the exact Chatflow or Workflow and model alias]
+      tool-calling:
+        status: conditional
+        endpoints: [chat-completions]
+        tests: [dify-tool-round-trip]
+        requirements: [Test the selected Dify agent mode and model alias]
+      non-text-model-apis:
+        status: deferred
+        endpoints: [audio-speech, audio-transcriptions, image-generations, rerank]
+        tests: []
+        requirements: [Add separate rerank, image, STT, and TTS contracts]
+  openclaw:
+    component: openclaw
+    version: 2026.9.3
+    adapter: custom-provider@2026.9.3
+    credential: native-subscription-or-provider-auth
+    capabilities:
+      native-subscription-runtime:
+        status: excluded
+        endpoints: []
+        tests: []
+        requirements: [Keep ChatGPT/Codex subscription routing outside LiteLLM]
+      custom-litellm-provider:
+        status: deferred
+        endpoints: [chat-completions]
+        tests: []
+        requirements:
+          - Define explicit OpenClaw provider capability metadata before enabling
+          - Do not infer Code Mode or tool support from OpenAI compatibility
+
+providers:
+  openai-api:
+    auth: OPENAI_API_KEY
+    capabilities:
+      chat-completions:
+        status: eligible
+        tests: [provider-chat]
+      embeddings:
+        status: eligible
+        tests: [provider-embedding]
+    notes: API-key billing only; ChatGPT subscriptions are not provider credentials
+  anthropic-api:
+    auth: ANTHROPIC_API_KEY
+    capabilities:
+      chat-completions:
+        status: eligible
+        tests: [provider-chat, provider-tool-round-trip]
+      embeddings:
+        status: excluded
+        tests: []
+    notes: LiteLLM normalization does not imply every OpenAI parameter is supported
+  gemini-api:
+    auth: GEMINI_API_KEY
+    capabilities:
+      chat-completions:
+        status: eligible
+        tests: [provider-chat]
+      embeddings:
+        status: eligible
+        tests: [provider-embedding]
+    notes: Configure and test distinct chat and embedding models
+  ollama:
+    auth: network-isolation
+    capabilities:
+      chat-completions:
+        status: eligible
+        tests: [provider-chat]
+      embeddings:
+        status: conditional
+        tests: [provider-embedding]
+      tool-calling:
+        status: conditional
+        tests: [provider-tool-round-trip]
+    notes: Requires the local-model component and model-specific capability checks
+  arbitrary-openai-compatible:
+    auth: provider-specific
+    capabilities:
+      chat-completions:
+        status: excluded
+        tests: []
+      embeddings:
+        status: excluded
+        tests: []
+    notes: Add a provider-specific contract and tests before use
+
+observability:
+  langfuse:
+    component: langfuse
+    version: "2"
+    status: conditional
+    tests: [langfuse-v2-callback]
+    reason: LiteLLM v1.103.2 pins the Langfuse v2 SDK; callback behavior needs a redacted smoke test
+
+security_controls:
+  - Store upstream provider credentials only in LiteLLM secret inputs
+  - Keep the LiteLLM master key out of n8n and Dify
+  - Issue separate model-limited virtual keys to n8n and Dify
+  - Keep management routes and the Admin UI off public networks
+  - Set litellm_settings.turn_off_message_logging to true before client traffic
+  - Do not log key values or provider credentials
+
+acceptance_tests:
+  gateway-liveliness: Liveliness returns 200 without calling a provider
+  gateway-readiness: Readiness returns 200 with DB and 503 when DB is unavailable
+  unauthenticated-model-deny: Model listing rejects requests without a client key
+  client-model-list: Client key lists only its approved model aliases
+  key-model-deny: Client key cannot invoke an alias outside its model allowlist
+  model-health-cost: Authenticated model health is documented and treated as billable
+  chat-basic: Chat returns an OpenAI-shaped response with the expected content
+  embedding-basic: Embedding returns a nonempty numeric vector
+  embedding-dimension: Embedding dimensions remain stable for the alias
+  n8n-chat: n8n Chat OpenAI node completes through the gateway
+  n8n-embedding: n8n Embeddings OpenAI node completes through the gateway
+  n8n-streaming: n8n receives complete streamed output without hanging
+  n8n-tool-round-trip: n8n completes tool request, tool result, and final response
+  dify-chat: Dify completes a non-streaming chat through the compatible provider
+  dify-embedding: Dify validates and invokes the embedding alias
+  dify-rag-round-trip: Dify indexes and retrieves a small document with stable dimensions
+  dify-streaming: Dify completes a streaming Chatflow or Workflow request
+  dify-tool-round-trip: Dify agent completes tool request and result handling
+  provider-chat: Selected upstream model passes the basic chat contract
+  provider-embedding: Selected upstream model passes the embedding contract
+  provider-tool-round-trip: Selected model completes a deterministic tool round trip
+  langfuse-v2-callback: Redacted test trace reaches Langfuse v2 without prompt or response content
+  logging-content-redaction: Sentinel prompt and response content are absent from logs and traces
+
+sources:
+  - title: LiteLLM Supported Endpoints
+    url: https://docs.litellm.ai/docs/supported_endpoints
+    accessed: "2026-10-02"
+  - title: LiteLLM Health Checks
+    url: https://docs.litellm.ai/docs/proxy/health
+    accessed: "2026-10-02"
+  - title: LiteLLM Virtual Keys
+    url: https://docs.litellm.ai/docs/proxy/virtual_keys
+    accessed: "2026-10-02"
+  - title: LiteLLM v1.103.2 dependency manifest
+    url: https://github.com/BerriAI/litellm/blob/v1.103.2/pyproject.toml
+    accessed: "2026-10-02"
+  - title: LiteLLM v1.103.2 Langfuse callback
+    url: https://github.com/BerriAI/litellm/blob/v1.103.2/litellm/integrations/langfuse/langfuse.py
+    accessed: "2026-10-02"
+  - title: LiteLLM v1.103.2 release
+    url: https://github.com/BerriAI/litellm/releases/tag/v1.103.2
+    accessed: "2026-10-02"
+  - title: n8n 2.40.7 OpenAI credential source
+    url: https://github.com/n8n-io/n8n/blob/n8n%402.40.7/packages/nodes-base/credentials/OpenAiApi.credentials.ts
+    accessed: "2026-10-02"
+  - title: n8n 2.40.7 OpenAI Chat Model source
+    url: https://github.com/n8n-io/n8n/blob/n8n%402.40.7/packages/%40n8n/nodes-langchain/nodes/llms/LMChatOpenAi/LmChatOpenAi.node.ts
+    accessed: "2026-10-02"
+  - title: n8n Embeddings OpenAI documentation
+    url: https://docs.n8n.io/integrations/builtin/cluster-nodes/sub-nodes/n8n-nodes-langchain.embeddingsopenai/
+    accessed: "2026-10-02"
+  - title: Dify OpenAI API Compatible plugin
+    url: https://github.com/langgenius/dify-official-plugins/tree/f6b4a6a945b4e5909d7c9ceb4c593505f1a3238d/models/openai_api_compatible
+    accessed: "2026-10-02"
+  - title: OpenClaw custom providers
+    url: https://docs.openclaw.ai/concepts/model-providers/custom-providers
+    accessed: "2026-10-02"
+  - title: Langfuse v2 to v3 migration
+    url: https://langfuse.com/self-hosting/upgrade-guides/upgrade-v2-to-v3
+    accessed: "2026-10-02"

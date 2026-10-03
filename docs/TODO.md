@@ -11,9 +11,11 @@ Decision: [ADR-0008](adr/0008-modular-stack-constructor.md). Delivery sequence:
   backup target, and host prerequisite.
 - [x] Define the component catalog schema and validate it in CI.
 - [x] Record required/optional dependencies and conflicts for each component.
-- [ ] Define supported LiteLLM client/provider contracts; do not equate generic
-  OpenAI-compatible APIs with full feature compatibility.
-- [ ] Measure baseline and representative stack resource usage on supported VPS sizes.
+- [x] Define supported LiteLLM client/provider contracts; do not equate generic
+  OpenAI-compatible APIs with full feature compatibility. The contract remains
+  `declared-not-executed` until Phase 1 acceptance tests pass.
+- [x] Measure baseline and representative stack resource usage on supported VPS sizes;
+  treat idle observations as sizing evidence, not deployment minimums or load tests.
 
 ### Compose profiles
 

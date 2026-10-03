@@ -39,6 +39,8 @@ See [demos/](demos/) for deployment guides of client demo projects.
 | [Update Server](update-server.md) | Apply repo changes to a running server |
 | [Upgrade Dify](upgrade-dify.md) | Major version upgrade (0.15.x → 1.13.x) |
 | [Component Catalog](component-catalog.md) | Machine-readable stack inventory and schema |
+| [LiteLLM Contracts](litellm-contracts.md) | Supported clients, providers, endpoints, and acceptance gates |
+| [Resource Baselines](resource-baselines.md) | Measured component usage and VPS sizing evidence |
 | [TODO](TODO.md) | Actionable project work |
 | [Roadmap](ROADMAP.md) | Modular stack constructor delivery phases |
 

@@ -24,6 +24,9 @@ Works with any cloud provider or bare metal — not tied to a specific platform.
 | **CPX32** | **4** | **8 GB** | **Full stack with cloud models (recommended)** |
 | CPX42 | 8 | 16 GB | Full stack + larger LLM models |
 
+See [Resource Baselines](docs/resource-baselines.md) for the measured idle footprint,
+host-class evidence, and sizing limitations. Local-model capacity remains model-specific.
+
 ## Quick Start
 
 ### Option A: Cloud-Init (Fully Automatic)
@@ -80,6 +83,7 @@ The script auto-clones the repo for config files if not running from a local cop
 | [config/fail2ban.conf](config/fail2ban.conf) | Fail2ban jail configuration |
 | [config/bash_aliases](config/bash_aliases) | Shell shortcuts for lab user |
 | [config/components.yml](config/components.yml) | Component inventory and dependency contracts |
+| [config/litellm-contracts.yml](config/litellm-contracts.yml) | Versioned LiteLLM compatibility and acceptance contracts |
 | [docker-compose.yml](docker-compose.yml) | AI platform stack with optional Ollama profile |
 | [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
 | [compose.openclaw-cli.yml](compose.openclaw-cli.yml) | Optional Docker CLI overlay for an existing rootless OpenClaw sandbox |
@@ -88,6 +92,7 @@ The script auto-clones the repo for config files if not running from a local cop
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |
 | [scripts/collect-diagnostics.sh](scripts/collect-diagnostics.sh) | Collect logs and configs into a zip for support |
 | [scripts/validate-component-catalog.py](scripts/validate-component-catalog.py) | Detect catalog and Compose drift |
+| [scripts/validate-litellm-contracts.py](scripts/validate-litellm-contracts.py) | Validate LiteLLM client and provider contracts |
 | [examples/cloud-config.yml](examples/cloud-config.yml) | Cloud-init template (works with any provider) |
 | [docs/](docs/) | Detailed setup guides and architecture decision records |
 | [docs/TODO.md](docs/TODO.md) | Actionable work for the modular stack constructor |

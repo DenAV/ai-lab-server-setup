@@ -37,6 +37,13 @@
 - OpenClaw publishes its Gateway only on host loopback port `18789`; access it through an SSH tunnel and never mount the Docker socket without an explicit sandbox design review.
 - Optional `ffmpeg-worker` mounts `/home/lab/client-conversation-analyzer-data` and limits file access through `N8N_RESTRICT_FILE_ACCESS_TO=/data/cca`.
 
+## Session Handoff
+
+- End every work session, including pauses and partially completed tasks, with a concise status summary.
+- Always state: what was completed, what remains, the recommended next action, and what is required from the user.
+- Include relevant verification results, blockers, and pending Git state in those sections without repeating the full work log.
+- If no user action is required, say so explicitly.
+
 ## Style
 
 - Shell and YAML use 2-space indentation per `.editorconfig`.
