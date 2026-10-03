@@ -35,6 +35,7 @@ REQUIRED_FILES=(
   "TROUBLESHOOTING.md"
   ".gitignore"
   ".editorconfig"
+  ".yamllint.yml"
   ".env.example"
   "setup.sh"
   "docker-compose.yml"
@@ -121,7 +122,7 @@ YAML_FILES=(
 
 if command -v yamllint &>/dev/null; then
   for yf in "${YAML_FILES[@]}"; do
-    if yamllint -d relaxed "${PROJECT_DIR}/${yf}" 2>/dev/null; then
+    if yamllint -c "${PROJECT_DIR}/.yamllint.yml" "${PROJECT_DIR}/${yf}" 2>/dev/null; then
       pass "${yf}"
     else
       fail "${yf} — yamllint errors"
