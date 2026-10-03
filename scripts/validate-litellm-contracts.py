@@ -20,6 +20,7 @@ CONTRACT_PATH = ROOT / "config" / "litellm-contracts.yml"
 CONFIG_PATH = ROOT / "config" / "litellm-config.yml"
 CATALOG_PATH = ROOT / "config" / "components.yml"
 COMPOSE_PATH = ROOT / "docker-compose.yml"
+CLOUDFLARE_COMPOSE_PATH = ROOT / "compose.traefik-cloudflare.yml"
 ENV_PATH = ROOT / ".env.example"
 STATUSES = {"conditional", "declared", "deferred", "eligible", "excluded", "verified"}
 ACTIVE_STATUSES = {"conditional", "declared", "eligible", "verified"}
@@ -120,6 +121,7 @@ def main() -> int:
         runtime_config = load_yaml(CONFIG_PATH)
         catalog = load_yaml(CATALOG_PATH)
         compose = load_yaml(COMPOSE_PATH)
+        cloudflare_compose = load_yaml(CLOUDFLARE_COMPOSE_PATH)
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
@@ -181,10 +183,18 @@ def main() -> int:
         errors.append("gateway.evaluated_version must match LITELLM_VERSION in .env.example")
 
     compose_networks = compose.get("networks") or {}
-    for network_name in ("litellm-backend", "litellm-clients", "litellm-upstreams"):
+    for network_name in (
+        "litellm-backend",
+        "litellm-clients",
+        "litellm-ingress",
+        "litellm-upstreams",
+    ):
         network = compose_networks.get(network_name)
         if not isinstance(network, dict) or network.get("internal") is not True:
             errors.append(f"Compose network {network_name} must be declared internal")
+    ingress_ipam = (compose_networks.get("litellm-ingress") or {}).get("ipam") or {}
+    if ingress_ipam.get("config") != [{"subnet": "172.30.0.0/29"}]:
+        errors.append("Compose network litellm-ingress must use subnet 172.30.0.0/29")
 
     services = compose.get("services") or {}
     expected_networks = {
@@ -192,9 +202,11 @@ def main() -> int:
         "litellm": {
             "litellm-backend",
             "litellm-clients",
+            "litellm-ingress",
             "litellm-upstreams",
             "traefik-public",
         },
+        "traefik": {"litellm-ingress", "traefik-public"},
     }
     for service_name, expected in expected_networks.items():
         actual = service_networks(services.get(service_name) or {})
@@ -214,14 +226,52 @@ def main() -> int:
             f"litellm-clients members are {sorted(actual_clients)}, "
             f"expected {sorted(expected_clients)}"
         )
+    expected_ingress = {"litellm", "traefik"}
+    actual_ingress = {
+        service_name
+        for service_name, service in services.items()
+        if "litellm-ingress" in service_networks(service)
+    }
+    if actual_ingress != expected_ingress:
+        errors.append(
+            f"litellm-ingress members are {sorted(actual_ingress)}, "
+            f"expected {sorted(expected_ingress)}"
+        )
     if service_networks(services.get("openclaw") or {}) & {
         "litellm-backend",
         "litellm-clients",
+        "litellm-ingress",
         "litellm-upstreams",
     }:
         errors.append("Compose service openclaw must remain outside LiteLLM networks")
 
+    traefik_command = (services.get("traefik") or {}).get("command") or []
+    trusted_ips_arg = (
+        "--entrypoints.websecure.forwardedheaders.trustedips="
+        "${TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS:-127.0.0.1/32}"
+    )
+    if trusted_ips_arg not in traefik_command:
+        errors.append("Traefik must restrict forwarded headers to configured trusted proxies")
+    cloudflare_traefik_command = (
+        ((cloudflare_compose.get("services") or {}).get("traefik") or {}).get("command")
+        or []
+    )
+    if trusted_ips_arg not in cloudflare_traefik_command:
+        errors.append("Cloudflare Traefik overlay must preserve trusted forwarded headers")
+
+    litellm_environment = (services.get("litellm") or {}).get("environment") or []
+    required_litellm_environment = {
+        "LITELLM_TRUSTED_PROXY_RANGES=172.30.0.0/29,"
+        "${TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS:-127.0.0.1/32}",
+        "LITELLM_MCP_XFF_NUM_TRUSTED_HOPS="
+        "${LITELLM_MCP_XFF_NUM_TRUSTED_HOPS:-1}",
+    }
+    if not required_litellm_environment.issubset(set(litellm_environment)):
+        errors.append("LiteLLM must receive trusted proxy ranges and the MCP trusted hop count")
+
     labels = service_labels(services.get("litellm") or {})
+    if labels.get("traefik.docker.network") != "litellm-ingress":
+        errors.append("LiteLLM Traefik routing must use the isolated litellm-ingress network")
     ui_middlewares = labels.get("traefik.http.routers.litellm-ui.middlewares", "")
     if "litellm-ui-allowlist@docker" not in ui_middlewares:
         errors.append("LiteLLM public UI router must use the operator IP allowlist")
@@ -260,6 +310,16 @@ def main() -> int:
             errors.append("litellm-config master key must load from the environment")
         if general_settings.get("store_model_in_db") is not True:
             errors.append("litellm-config must enable database-backed GUI model management")
+        if general_settings.get("trusted_proxy_ranges") != "os.environ/LITELLM_TRUSTED_PROXY_RANGES":
+            errors.append("litellm-config trusted proxy ranges must load from the environment")
+        if general_settings.get("use_x_forwarded_for") is not True:
+            errors.append("litellm-config must enable trusted X-Forwarded-For processing")
+        if general_settings.get("mcp_trusted_proxy_ranges") != ["172.30.0.0/29"]:
+            errors.append("litellm-config must trust only the isolated ingress network for MCP XFF")
+        if general_settings.get("mcp_xff_num_trusted_hops") != (
+            "os.environ/LITELLM_MCP_XFF_NUM_TRUSTED_HOPS"
+        ):
+            errors.append("litellm-config MCP trusted hop count must load from the environment")
 
     endpoints = contract.get("endpoints")
     if not isinstance(endpoints, dict) or not endpoints:

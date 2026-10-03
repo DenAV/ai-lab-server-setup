@@ -8,3 +8,8 @@ general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   store_model_in_db: true
   database_connection_pool_limit: 5
+  trusted_proxy_ranges: os.environ/LITELLM_TRUSTED_PROXY_RANGES
+  use_x_forwarded_for: true
+  mcp_trusted_proxy_ranges:
+    - 172.30.0.0/29
+  mcp_xff_num_trusted_hops: os.environ/LITELLM_MCP_XFF_NUM_TRUSTED_HOPS

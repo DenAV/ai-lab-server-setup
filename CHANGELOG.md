@@ -53,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Isolated LiteLLM database, clients, and optional upstreams on dedicated internal
   networks; added a Cloudflare WAF challenge, restricted origin ingress to trusted edge
   CIDRs, and denied declared public model, schema, health, and metadata routes
+- Added isolated Traefik-to-LiteLLM ingress and validated forwarded-client-IP handling for
+  login throttling and MCP access control
 - Updated CI to the Node.js 24 checkout action and removed non-actionable YAML line-length warnings
 - Manage LiteLLM providers and models through its loopback-only Admin UI and encrypted database
 - Linked roadmap phases to stable TODO task IDs, progress counts, status, and exit evidence
