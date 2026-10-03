@@ -65,7 +65,8 @@ pass the acceptance tests in `config/litellm-contracts.yml` before selection.
   retain them encrypted in its dedicated database with `LITELLM_SALT_KEY`.
 - Keep the master key in the administrative boundary; never place it in n8n or Dify.
 - Issue separate model-limited virtual keys for n8n and Dify.
-- Keep LiteLLM, its management routes, database, and Admin UI off public networks.
+- Expose LiteLLM API and Admin UI only through Traefik HTTPS with authentication; keep
+  its database off public networks.
 - Set `litellm_settings.turn_off_message_logging: true` before client traffic. Verify
   with sentinel content that prompts and responses are absent from logs and traces.
 - Never log credentials or key values.

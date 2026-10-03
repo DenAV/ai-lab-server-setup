@@ -14,7 +14,7 @@ phase and task IDs in [Project TODO](TODO.md).
 | [P1](#p1-compose-profile-foundation) | In progress | 6/8 | Clean-host preset and LiteLLM acceptance |
 | [P2](#p2-deployment-selector) | Planned | 0/14 | Start after P1 exit gate |
 | [P3](#p3-selection-aware-operations) | Planned | 1/7 | Complete lifecycle coverage |
-| [P4](#p4-existing-host-migration) | Planned | 0/5 | Migration preview and rollback evidence |
+| [P4](#p4-existing-host-migration) | In progress | 4/5 | Idempotency and rollback test |
 
 Status meanings:
 
@@ -97,19 +97,25 @@ would otherwise report false failures. P3 remains planned until lifecycle covera
 
 ## P4: Existing-host migration
 
-**Status:** Planned
+**Status:** In progress
 
 **Outcome:** current all-in-one installations adopt the constructor without data loss.
 
 **Detailed tasks:** [P4 tasks](TODO.md#p4-existing-host-migration)
 
-- [ ] Detect running components, volumes, credentials, and host overrides.
-- [ ] Generate a migration plan matching current intent.
-- [ ] Preserve volumes and secrets while stopping deselected products.
+- [x] Detect running components, volumes, credentials, and host overrides.
+- [x] Generate a migration plan matching current intent.
+- [x] Preserve volumes and secrets while stopping deselected products.
 - [ ] Test upgrade and rollback against an existing-host fixture.
-- [ ] Roll out to the lab host and verify resources and service behavior.
+- [x] Roll out to the lab host and verify resources and service behavior.
 - [ ] **Exit gate:** the lab uses saved selection state, has no unmanaged project
   containers, and has recorded rollback evidence.
+
+Runtime evidence for release `212bb0a`: checksum-verified cold backup; 13 project volumes
+preserved; 5 selected services healthy; 14 deselected containers stopped; validation
+passed 19/19; available memory increased from 2.7 GiB to 4.7 GiB and swap use decreased
+from 1.9 GiB to 778 MiB. The backup recovery path is recorded but an intentional rollback
+and idempotent rerun remain untested.
 
 ## Deferred until explicitly selected
 

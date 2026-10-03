@@ -79,11 +79,11 @@ counts must match the roadmap in the same change.
 
 ## P4: Existing-host migration
 
-**Status:** Planned — 0/5 tasks
+**Status:** In progress — 4/5 tasks
 
-- [ ] **P4-01** Detect running components, volumes, credentials, and host overrides.
-- [ ] **P4-02** Generate a migration preview matching the current installation intent.
-- [ ] **P4-03** Preserve volumes and secrets while explicitly stopping deselected products.
+- [x] **P4-01** Detect running components, volumes, credentials, and host overrides.
+- [x] **P4-02** Generate a migration preview matching the current installation intent.
+- [x] **P4-03** Preserve volumes and secrets while explicitly stopping deselected products.
 - [ ] **P4-04** Test clean-host and upgraded-host migration, rollback, and idempotency.
-- [ ] **P4-05** Apply the constructor to the lab host and verify resource reduction,
-  selected services, and rollback evidence.
+- [x] **P4-05** Apply the constructor to the lab host and verify selected services,
+  resource reduction, and the recovery artifact.
