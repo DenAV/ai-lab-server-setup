@@ -17,6 +17,7 @@ except ModuleNotFoundError:
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "config" / "litellm-contracts.yml"
+CONFIG_PATH = ROOT / "config" / "litellm-config.yml"
 CATALOG_PATH = ROOT / "config" / "components.yml"
 ENV_PATH = ROOT / ".env.example"
 STATUSES = {"conditional", "declared", "deferred", "eligible", "excluded", "verified"}
@@ -98,6 +99,7 @@ def main() -> int:
     errors: list[str] = []
     try:
         contract = load_yaml(CONTRACT_PATH)
+        runtime_config = load_yaml(CONFIG_PATH)
         catalog = load_yaml(CATALOG_PATH)
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
@@ -155,6 +157,54 @@ def main() -> int:
     if set(aliases) != {"lab-chat", "lab-embedding"}:
         errors.append("gateway.model_aliases must define lab-chat and lab-embedding")
 
+    versions = read_versions()
+    if versions.get("LITELLM_VERSION") != version:
+        errors.append("gateway.evaluated_version must match LITELLM_VERSION in .env.example")
+
+    runtime_models = runtime_config.get("model_list")
+    if not isinstance(runtime_models, list):
+        errors.append("litellm-config.model_list must be a list")
+        runtime_models = []
+    runtime_aliases = {
+        model.get("model_name") for model in runtime_models if isinstance(model, dict)
+    }
+    if runtime_aliases != set(aliases):
+        errors.append("litellm-config model aliases must match gateway.model_aliases")
+    expected_runtime_models = {
+        "lab-chat": "os.environ/LITELLM_CHAT_MODEL",
+        "lab-embedding": "os.environ/LITELLM_EMBEDDING_MODEL",
+    }
+    for model in runtime_models:
+        if not isinstance(model, dict):
+            errors.append("litellm-config.model_list entries must be mappings")
+            continue
+        alias = model.get("model_name")
+        params = model.get("litellm_params")
+        if not isinstance(params, dict):
+            errors.append(f"litellm-config model {alias} must define litellm_params")
+            continue
+        if params.get("model") != expected_runtime_models.get(alias):
+            errors.append(f"litellm-config model {alias} must use its reviewed model variable")
+        if params.get("api_key") != "os.environ/OPENAI_API_KEY":
+            errors.append(f"litellm-config model {alias} must load its provider key from the environment")
+
+    runtime_settings = runtime_config.get("litellm_settings")
+    if not isinstance(runtime_settings, dict):
+        errors.append("litellm-config.litellm_settings must be a mapping")
+    else:
+        if runtime_settings.get("turn_off_message_logging") is not True:
+            errors.append("litellm-config must set turn_off_message_logging to true")
+        if runtime_settings.get("telemetry") is not False:
+            errors.append("litellm-config must disable telemetry")
+    general_settings = runtime_config.get("general_settings")
+    if not isinstance(general_settings, dict):
+        errors.append("litellm-config.general_settings must be a mapping")
+    else:
+        if general_settings.get("master_key") != "os.environ/LITELLM_MASTER_KEY":
+            errors.append("litellm-config master key must load from the environment")
+        if general_settings.get("store_model_in_db") is not False:
+            errors.append("litellm-config must keep file-based model configuration authoritative")
+
     endpoints = contract.get("endpoints")
     if not isinstance(endpoints, dict) or not endpoints:
         errors.append("endpoints must be a non-empty mapping")
@@ -179,7 +229,6 @@ def main() -> int:
             errors.append(f"{field}.notes must be non-empty")
 
     component_ids = set((catalog.get("components") or {}).keys())
-    versions = read_versions()
     version_variables = {
         "dify": "DIFY_VERSION",
         "langfuse": "LANGFUSE_VERSION",

@@ -40,6 +40,7 @@ REQUIRED_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "config/components.yml"
+  "config/litellm-config.yml"
   "config/litellm-contracts.yml"
   "config/fail2ban.conf"
   "config/bash_aliases"
@@ -48,9 +49,13 @@ REQUIRED_FILES=(
   "scripts/validate.sh"
   "scripts/collect-diagnostics.sh"
   "scripts/validate-component-catalog.py"
+  "scripts/validate-compose-presets.py"
+  "scripts/validate-doc-links.py"
   "scripts/validate-litellm-contracts.py"
   "examples/cloud-config.yml"
   "docs/README.md"
+  "docs/project/ROADMAP.md"
+  "docs/project/TODO.md"
 )
 
 for f in "${REQUIRED_FILES[@]}"; do
@@ -108,6 +113,7 @@ YAML_FILES=(
   "docker-compose.workers.yml"
   "compose.openclaw-cli.yml"
   "config/components.yml"
+  "config/litellm-config.yml"
   "config/litellm-contracts.yml"
   "examples/cloud-config.yml"
 )
@@ -176,6 +182,11 @@ if command -v docker &>/dev/null && docker compose version &>/dev/null; then
   validate_compose "OpenClaw overlay" "docker-compose.yml" "compose.openclaw-cli.yml"
   validate_compose "combined overlays" \
     "docker-compose.yml" "docker-compose.workers.yml" "compose.openclaw-cli.yml"
+  if python3 "${PROJECT_DIR}/scripts/validate-compose-presets.py"; then
+    pass "Compose preset service closures valid"
+  else
+    fail "Compose preset service closures invalid"
+  fi
 else
   skip "docker compose not available"
 fi
@@ -186,14 +197,20 @@ fi
 echo ""
 echo "Environment:"
 
-# Extract variables referenced in docker-compose.yml
-COMPOSE_VARS=$(grep -oP '\$\{(\w+)' "${PROJECT_DIR}/docker-compose.yml" | sed 's/\${//' | sort -u)
+# Extract variables referenced in Compose files
+COMPOSE_VARS=$(grep -hoP '\$\{(\w+)' \
+  "${PROJECT_DIR}/docker-compose.yml" \
+  "${PROJECT_DIR}/docker-compose.workers.yml" \
+  "${PROJECT_DIR}/compose.openclaw-cli.yml" | sed 's/\${//' | sort -u)
 ENV_VARS=$(grep -oP '^\w+=' "${PROJECT_DIR}/.env.example" | sed 's/=//' | sort -u)
 
 MISSING_VARS=0
 for var in ${COMPOSE_VARS}; do
   # Skip variables with defaults (:-) in compose
-  if grep -qP "\\\$\{${var}:-" "${PROJECT_DIR}/docker-compose.yml"; then
+  if grep -qP "\\\$\{${var}:-" \
+    "${PROJECT_DIR}/docker-compose.yml" \
+    "${PROJECT_DIR}/docker-compose.workers.yml" \
+    "${PROJECT_DIR}/compose.openclaw-cli.yml"; then
     continue
   fi
   if ! echo "${ENV_VARS}" | grep -q "^${var}$"; then
@@ -242,7 +259,7 @@ echo ""
 echo "Documentation:"
 
 # Check that all setup guides referenced in README exist
-GUIDE_LINKS=$(grep -oP 'docs/setup-[[:alnum:]_-]+\.md' "${PROJECT_DIR}/README.md" | sort -u)
+GUIDE_LINKS=$(grep -oP 'docs/platforms/setup-[[:alnum:]_-]+\.md' "${PROJECT_DIR}/README.md" | sort -u)
 for guide in ${GUIDE_LINKS}; do
   if [ -f "${PROJECT_DIR}/${guide}" ]; then
     pass "${guide} exists"
@@ -256,6 +273,12 @@ if grep -q "TROUBLESHOOTING.md" "${PROJECT_DIR}/README.md"; then
   pass "TROUBLESHOOTING.md linked in README"
 else
   fail "TROUBLESHOOTING.md not linked in README"
+fi
+
+if python3 "${PROJECT_DIR}/scripts/validate-doc-links.py"; then
+  pass "Markdown relative links valid"
+else
+  fail "Markdown relative links invalid"
 fi
 
 # =========================================================================

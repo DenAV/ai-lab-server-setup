@@ -13,6 +13,13 @@ server. Use this after pushing improvements to GitHub.
 
 ## Update Procedure
 
+> **Profile migration stop:** releases containing the Phase 1 profile foundation do not
+> preserve the former all-services default. Do not apply such a release to an existing
+> all-in-one host through this ordinary update procedure. Phase 4 will add a migration
+> preview that records running services, resolves `COMPOSE_PROFILES`, preserves data, and
+> explicitly stops deselected containers. Until then, keep the host on its known-good
+> release; setting profiles and running `up` alone leaves old containers running.
+
 ### Step 1: Push Changes to GitHub
 
 From your local machine:
@@ -40,6 +47,7 @@ The type of change determines the commands needed:
 
 ```bash
 # Preview what will change
+docker compose config --services
 docker compose pull        # pull new images (if versions bumped)
 docker compose up -d       # recreate only changed services
 ```
@@ -58,6 +66,7 @@ all secrets).
 echo "DEMO_DB_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=' | head -c 16)" >> .env
 
 # Then apply
+docker compose config --services
 docker compose up -d
 ```
 
@@ -118,6 +127,7 @@ diff .env .env.example
 echo "NEW_VAR=value" >> .env
 
 # Start new service
+docker compose config --services
 docker compose up -d
 ```
 
@@ -128,6 +138,7 @@ ssh lab@<server-ip>
 cd ~/ai-lab-server-setup
 git pull
 docker compose pull          # download new images
+docker compose config --services
 docker compose up -d         # restart updated services
 ```
 
@@ -174,6 +185,7 @@ See [upgrade-dify.md](upgrade-dify.md) for the full procedure.
 - **Always `git pull` before `docker compose up -d`** — compose file and
   `.env` must be in sync
 - **Check `.env.example` diff** after pull to catch new required variables
+- **Check `docker compose config --services`** before `up` to confirm the selected closure
 - **Backup volumes** before major version upgrades:
 
 ```bash

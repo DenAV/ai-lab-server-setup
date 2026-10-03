@@ -50,7 +50,8 @@ openssl rand -base64 16
 
 ```bash
 cd ~/ai-lab-server-setup
-docker compose up -d
+COMPOSE_PROFILES=dify,qdrant,litellm docker compose config --services
+COMPOSE_PROFILES=dify,qdrant,litellm docker compose up -d
 
 # Check all Dify containers are running
 docker compose ps | grep dify
@@ -69,7 +70,7 @@ Dify can use Ollama as a model provider for local LLM inference.
    - **Base URL:** `http://ollama-compose:11434`
 3. Click **Save**
 
-> Enable the `local-model` Compose profile before configuring the provider.
+> Add the `local-model` Compose profile before configuring the provider.
 
 ## Connect to Qdrant
 

@@ -1,0 +1,20 @@
+model_list:
+  - model_name: lab-chat
+    litellm_params:
+      model: os.environ/LITELLM_CHAT_MODEL
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: lab-embedding
+    litellm_params:
+      model: os.environ/LITELLM_EMBEDDING_MODEL
+      api_key: os.environ/OPENAI_API_KEY
+    model_info:
+      mode: embedding
+
+litellm_settings:
+  turn_off_message_logging: true
+  telemetry: false
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  store_model_in_db: false
+  database_connection_pool_limit: 5

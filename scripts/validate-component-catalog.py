@@ -38,6 +38,7 @@ REQUIRED_COMPOSE_FILES = {
     "docker-compose.workers.yml",
     "docker-compose.yml",
 }
+REQUIRED_PRESETS = {"dify-cloud", "n8n-cloud", "openclaw"}
 STORAGE_FIELDS = {
     "type",
     "compose_file",
@@ -210,6 +211,7 @@ def main() -> int:
             f"compose_files must be exactly {sorted(REQUIRED_COMPOSE_FILES)}"
         )
     prerequisites = catalog.get("host_prerequisites")
+    presets = catalog.get("presets")
     components = catalog.get("components")
     if not isinstance(prerequisites, dict) or any(
         not isinstance(key, str) or not isinstance(value, str)
@@ -220,6 +222,9 @@ def main() -> int:
     if not isinstance(components, dict) or not components:
         errors.append("components must be a non-empty mapping")
         components = {}
+    if not isinstance(presets, dict) or set(presets) != REQUIRED_PRESETS:
+        errors.append(f"presets must be exactly {sorted(REQUIRED_PRESETS)}")
+        presets = {}
 
     compose_services: dict[str, dict[str, Any]] = {}
     service_files: dict[str, set[str]] = {}
@@ -268,6 +273,7 @@ def main() -> int:
     catalog_networks: set[str] = set()
     required_components: set[str] = set()
     required_dependency_graph: dict[str, set[str]] = {}
+    component_profiles: dict[str, str] = {}
 
     for component_id, component in components.items():
         prefix = f"components.{component_id}"
@@ -356,6 +362,14 @@ def main() -> int:
             )
         if component.get("required") and profile:
             errors.append(f"{prefix} is required and cannot have an optional profile")
+        if not component.get("required") and not profile:
+            errors.append(f"{prefix} is optional and must have a profile")
+        if profile:
+            if profile in component_profiles:
+                errors.append(
+                    f"profile {profile} is shared by {component_profiles[profile]} and {component_id}"
+                )
+            component_profiles[profile] = component_id
 
         dependencies = component.get("dependencies")
         if not isinstance(dependencies, dict) or set(dependencies) != {"required", "optional"}:
@@ -498,6 +512,33 @@ def main() -> int:
     if required_components != {"traefik"}:
         errors.append("traefik must be the only required component")
 
+    for preset_id, preset in presets.items():
+        prefix = f"presets.{preset_id}"
+        if not isinstance(preset, dict) or set(preset) != {"description", "components"}:
+            errors.append(f"{prefix} must contain description and components")
+            continue
+        if not isinstance(preset["description"], str) or not preset["description"]:
+            errors.append(f"{prefix}.description must be a non-empty string")
+        selected = set(string_list(preset["components"], f"{prefix}.components", errors))
+        unknown = selected - component_ids
+        if unknown:
+            errors.append(f"{prefix} references unknown components: {', '.join(sorted(unknown))}")
+        missing_required = required_components - selected
+        if missing_required:
+            errors.append(
+                f"{prefix} omits required components: {', '.join(sorted(missing_required))}"
+            )
+        missing_dependencies = {
+            dependency
+            for component_id in selected
+            for dependency in required_dependency_graph.get(component_id, set())
+            if dependency not in selected
+        }
+        if missing_dependencies:
+            errors.append(
+                f"{prefix} omits dependency closure: {', '.join(sorted(missing_dependencies))}"
+            )
+
     visited: set[str] = set()
     active: set[str] = set()
 
@@ -532,7 +573,8 @@ def main() -> int:
 
     print(
         f"Component catalog valid: {len(components)} components, "
-        f"{len(compose_services)} services, {len(declared_volumes)} volumes"
+        f"{len(compose_services)} services, {len(declared_volumes)} volumes, "
+        f"{len(presets)} presets"
     )
     return 0
 
