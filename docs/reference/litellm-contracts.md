@@ -61,7 +61,8 @@ pass the acceptance tests in `config/litellm-contracts.yml` before selection.
 
 ## Credential Boundary
 
-- Store upstream provider credentials only in LiteLLM secret inputs.
+- Add upstream provider credentials only through the loopback-only LiteLLM Admin UI;
+  retain them encrypted in its dedicated database with `LITELLM_SALT_KEY`.
 - Keep the master key in the administrative boundary; never place it in n8n or Dify.
 - Issue separate model-limited virtual keys for n8n and Dify.
 - Keep LiteLLM, its management routes, database, and Admin UI off public networks.
