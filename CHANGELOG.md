@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Authenticated LiteLLM HTTPS routing through Traefik with a configurable subdomain
 - Product-level Compose profiles, initial preset closures, and resolved-service validation
 - Internal LiteLLM Proxy `v1.103.2` with a dedicated PostgreSQL database and secure defaults
 - Measured idle resource baseline, component metrics, and evidence-qualified VPS sizing
@@ -47,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated CI to the Node.js 24 checkout action and removed non-actionable YAML line-length warnings
 - Manage LiteLLM providers and models through its loopback-only Admin UI and encrypted database
 - Linked roadmap phases to stable TODO task IDs, progress counts, status, and exit evidence
 - Organized documentation into platform, integration, operations, project, and reference sections with link validation

@@ -132,7 +132,7 @@ Services included:
 | Dify | `dify.<domain>` | AI application platform | [setup](docs/platforms/setup-dify.md) |
 | n8n | `n8n.<domain>` | Workflow automation | [setup](docs/platforms/setup-n8n.md) |
 | OpenClaw | SSH tunnel only | Personal AI assistant | [setup](docs/platforms/setup-openclaw.md) |
-| LiteLLM | loopback UI; internal API | Model gateway and virtual-key boundary | [setup](docs/platforms/setup-litellm.md) |
+| LiteLLM | configurable HTTPS subdomain | Model gateway and virtual-key boundary | [setup](docs/platforms/setup-litellm.md) |
 | Ollama | optional internal service | Local LLM runtime (`local-model` profile) | [setup](docs/platforms/setup-ollama.md) |
 | Qdrant | internal | Vector database | [setup](docs/platforms/setup-qdrant.md) |
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/platforms/setup-langfuse.md) |
