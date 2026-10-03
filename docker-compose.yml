@@ -1,8 +1,9 @@
 # AI Learning Platform — Docker Compose
-# Optional full-stack AI platform deployment.
+# Profile-based AI platform deployment with mandatory Traefik.
 #
 # Usage:
 #   cp .env.example .env  # edit values
+#   # Set COMPOSE_PROFILES; see docs/operations/compose-profiles.md
 #   docker compose up -d
 
 networks:
@@ -28,12 +29,14 @@ volumes:
   dify-sandbox-deps:
   dify-plugin-data:
   demo-db-data:
+  litellm-db-data:
 
 services:
   # ===========================================================================
   # Demo DB — Shared PostgreSQL for demo projects
   # ===========================================================================
   demo-db:
+    profiles: ["demo-db"]
     image: "postgres:16-alpine"
     container_name: demo-db
     restart: unless-stopped
@@ -95,6 +98,7 @@ services:
   # n8n — Workflow Automation
   # ===========================================================================
   n8n:
+    profiles: ["n8n"]
     image: "n8nio/n8n:${N8N_VERSION:-2.40.7}"
     container_name: n8n
     restart: unless-stopped
@@ -136,6 +140,7 @@ services:
   # OpenClaw — Personal AI Assistant Gateway
   # ===========================================================================
   openclaw:
+    profiles: ["openclaw"]
     image: "ghcr.io/openclaw/openclaw:${OPENCLAW_VERSION:-2026.9.3}"
     container_name: openclaw
     restart: unless-stopped
@@ -197,6 +202,7 @@ services:
   # Qdrant — Vector Database
   # ===========================================================================
   qdrant:
+    profiles: ["qdrant"]
     image: "qdrant/qdrant:${QDRANT_VERSION:-v1.19.1}"
     container_name: qdrant-compose
     restart: unless-stopped
@@ -211,6 +217,7 @@ services:
   # Langfuse — LLM Observability
   # ===========================================================================
   langfuse-db:
+    profiles: ["langfuse"]
     image: "postgres:16-alpine"
     container_name: langfuse-db
     restart: unless-stopped
@@ -229,6 +236,7 @@ services:
       retries: 5
 
   langfuse:
+    profiles: ["langfuse"]
     image: "langfuse/langfuse:${LANGFUSE_VERSION:-2}"
     container_name: langfuse
     restart: unless-stopped
@@ -261,9 +269,60 @@ services:
       start_period: 30s
 
   # ===========================================================================
+  # LiteLLM — Internal model gateway and dedicated PostgreSQL database
+  # ===========================================================================
+  litellm-db:
+    profiles: ["litellm"]
+    image: "postgres:${LITELLM_DB_VERSION:-16.15-alpine}"
+    container_name: litellm-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=litellm
+      - POSTGRES_PASSWORD=${LITELLM_DB_PASSWORD}
+      - POSTGRES_DB=litellm
+    volumes:
+      - "litellm-db-data:/var/lib/postgresql/data"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  litellm:
+    profiles: ["litellm"]
+    image: "ghcr.io/berriai/litellm:${LITELLM_VERSION:-v1.103.2}"
+    container_name: litellm
+    restart: unless-stopped
+    command: ["--config=/app/config.yaml"]
+    depends_on:
+      litellm-db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://litellm:${LITELLM_DB_PASSWORD}@litellm-db:5432/litellm
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - "./config/litellm-config.yml:/app/config.yaml:ro"
+    networks:
+      - ai-net
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health/readiness', timeout=5)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+
+  # ===========================================================================
   # Dify — AI Application Platform (v1.13.3)
   # ===========================================================================
   dify-db:
+    profiles: ["dify"]
     image: "postgres:16-alpine"
     container_name: dify-db
     restart: unless-stopped
@@ -282,6 +341,7 @@ services:
       retries: 5
 
   dify-redis:
+    profiles: ["dify"]
     image: "redis:7-alpine"
     container_name: dify-redis
     restart: unless-stopped
@@ -297,6 +357,7 @@ services:
       retries: 5
 
   dify-sandbox:
+    profiles: ["dify"]
     image: "langgenius/dify-sandbox:${DIFY_SANDBOX_VERSION:-0.2.14}"
     container_name: dify-sandbox
     restart: unless-stopped
@@ -317,6 +378,7 @@ services:
       retries: 5
 
   dify-plugin-daemon:
+    profiles: ["dify"]
     image: "langgenius/dify-plugin-daemon:${DIFY_PLUGIN_VERSION:-0.5.3-local}"
     container_name: dify-plugin-daemon
     restart: unless-stopped
@@ -356,6 +418,7 @@ services:
       - ai-net
 
   dify-api:
+    profiles: ["dify"]
     image: "langgenius/dify-api:${DIFY_VERSION:-latest}"
     container_name: dify-api
     restart: unless-stopped
@@ -411,6 +474,7 @@ services:
       start_period: 60s
 
   dify-worker:
+    profiles: ["dify"]
     image: "langgenius/dify-api:${DIFY_VERSION:-latest}"
     container_name: dify-worker
     restart: unless-stopped
@@ -450,6 +514,7 @@ services:
       - ai-net
 
   dify-beat:
+    profiles: ["dify"]
     image: "langgenius/dify-api:${DIFY_VERSION:-latest}"
     container_name: dify-beat
     restart: unless-stopped
@@ -479,6 +544,7 @@ services:
       - ai-net
 
   dify-web:
+    profiles: ["dify"]
     image: "langgenius/dify-web:${DIFY_VERSION:-latest}"
     container_name: dify-web
     restart: unless-stopped
@@ -495,6 +561,7 @@ services:
       - ai-net
 
   dify-nginx:
+    profiles: ["dify"]
     image: "nginx:alpine"
     container_name: dify-nginx
     restart: unless-stopped

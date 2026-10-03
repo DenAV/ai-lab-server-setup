@@ -2,31 +2,26 @@
 
 Detailed setup and configuration guides for each component in the AI Lab stack.
 
-## AI Services
+## Platforms
 
 | Guide | Component | Port |
 |-------|-----------|------|
-| [Ollama](setup-ollama.md) | Optional local LLM inference | internal |
-| [OpenClaw](setup-openclaw.md) | Personal AI assistant | 18789 (loopback) |
-| [Qdrant](setup-qdrant.md) | Vector database | 6333 |
+| [Ollama](platforms/setup-ollama.md) | Optional local LLM inference | internal |
+| [OpenClaw](platforms/setup-openclaw.md) | Personal AI assistant | 18789 (loopback) |
+| [Qdrant](platforms/setup-qdrant.md) | Vector database | 6333 |
+| [LiteLLM](platforms/setup-litellm.md) | Internal model gateway | 4000 (loopback) |
+| [Traefik](platforms/setup-traefik.md) | Reverse proxy + TLS | 80, 443 |
+| [Dify](platforms/setup-dify.md) | AI application platform | `dify.<domain>` |
+| [n8n](platforms/setup-n8n.md) | Workflow automation | `n8n.<domain>` |
+| [Langfuse](platforms/setup-langfuse.md) | LLM observability | `trace.<domain>` |
+| [FFmpeg Worker](platforms/setup-ffmpeg-worker.md) | Internal media processing worker | internal |
 
-## Platform Stack (optional, via docker-compose)
+## Integrations
 
-| Guide | Component | Subdomain |
-|-------|-----------|-----------|
-| [Traefik](setup-traefik.md) | Reverse proxy + TLS | — |
-| [Dify](setup-dify.md) | AI application platform | `dify.<domain>` |
-| [n8n](setup-n8n.md) | Workflow automation | `n8n.<domain>` |
-| [n8n MCP](setup-n8n-mcp.md) | OpenCode MCP connection to n8n | `n8n.<domain>/mcp-server/http` |
-| [Langfuse](setup-langfuse.md) | LLM observability | `trace.<domain>` |
-| [FFmpeg Worker](setup-ffmpeg-worker.md) | Internal media processing worker | internal |
-
-## Integration Guide
-
-[Integration Guide](integration-guide.md) — How to connect all services
-together: Ollama, Qdrant, Dify, n8n, and Langfuse. Includes
-connection matrix, per-integration setup steps, cross-platform workflows,
-and troubleshooting.
+| Guide | Description |
+|-------|-------------|
+| [Platform Integration](integrations/platform-integration.md) | Internal URLs and cross-platform workflows |
+| [n8n MCP](integrations/setup-n8n-mcp.md) | OpenCode connection to the n8n MCP endpoint |
 
 ## Demo Projects
 
@@ -36,12 +31,22 @@ See [demos/](demos/) for deployment guides of client demo projects.
 
 | Guide | Description |
 |-------|-------------|
-| [Update Server](update-server.md) | Apply repo changes to a running server |
-| [Upgrade Dify](upgrade-dify.md) | Major version upgrade (0.15.x → 1.13.x) |
-| [TODO](TODO.md) | Actionable project work |
-| [Roadmap](ROADMAP.md) | Modular stack constructor delivery phases |
+| [Compose Profiles](operations/compose-profiles.md) | Product profiles, presets, and safe selection behavior |
+| [Update Server](operations/update-server.md) | Apply repo changes to a running server |
+| [Upgrade Dify](operations/upgrade-dify.md) | Major version upgrade (0.15.x → 1.13.x) |
+| [OpenClaw Rootless Sandbox](operations/openclaw-rootless-sandbox.md) | Isolated Docker client overlay |
 
-## Demo Projects
+## Project And Reference
+
+| Guide | Description |
+|-------|-------------|
+| [Roadmap](project/ROADMAP.md) | Modular stack constructor delivery phases |
+| [TODO](project/TODO.md) | Actionable project work |
+| [Component Catalog](reference/component-catalog.md) | Machine-readable stack inventory and schema |
+| [LiteLLM Contracts](reference/litellm-contracts.md) | Supported clients, providers, endpoints, and acceptance gates |
+| [Resource Baselines](reference/resource-baselines.md) | Measured component usage and VPS sizing evidence |
+
+## Architecture Decisions
 
 See [adr/](adr/) for all decisions about platform choices and configuration.
 

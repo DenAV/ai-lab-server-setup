@@ -9,7 +9,7 @@
 ## Local Verification
 
 - Run the same offline check as CI with `bash tests/test_repo.sh`; it validates required files, Bash syntax, ShellCheck when installed, YAML, compose config when Docker exists, `.env.example` coverage, secret patterns, and doc links.
-- CI additionally runs `bash -n setup.sh scripts/generate-env.sh scripts/validate.sh scripts/collect-diagnostics.sh`, `shellcheck --severity=error ...`, and `yamllint -d relaxed docker-compose.yml examples/cloud-config.yml`.
+- CI additionally runs `bash -n setup.sh scripts/generate-env.sh scripts/validate.sh scripts/collect-diagnostics.sh`, `shellcheck --severity=error ...`, and `yamllint -d relaxed` for Compose, catalog, LiteLLM, and cloud-init YAML.
 - This workspace may not have Docker installed; `tests/test_repo.sh` skips compose validation when Docker is unavailable.
 
 ## Live Server Workflow
@@ -24,7 +24,7 @@
 - Never re-run `scripts/generate-env.sh` on an existing server unless the user explicitly accepts rotating all stack secrets; it overwrites `.env` and writes `.secrets`.
 - When `.env.example` gains variables, append only the missing values to the live `.env`; do not regenerate the whole file.
 - Do not use `docker system prune --volumes`; repo docs warn this may delete service data.
-- Before major Dify or n8n upgrades, check release notes and back up volumes; `docs/upgrade-dify.md` is the existing Dify major-upgrade path.
+- Before major Dify or n8n upgrades, check release notes and back up volumes; `docs/operations/upgrade-dify.md` is the existing Dify major-upgrade path.
 - Do not commit `.env`, `.secrets`, SSH keys, PEM/key files, or generated `cloud-config.yml`; root `.gitignore` intentionally ignores them.
 
 ## Stack Gotchas
@@ -36,6 +36,20 @@
 - Ollama is container-only and guarded by the `local-model` Compose profile; the default cloud-model stack must not start it.
 - OpenClaw publishes its Gateway only on host loopback port `18789`; access it through an SSH tunnel and never mount the Docker socket without an explicit sandbox design review.
 - Optional `ffmpeg-worker` mounts `/home/lab/client-conversation-analyzer-data` and limits file access through `N8N_RESTRICT_FILE_ACCESS_TO=/data/cca`.
+
+## Session Handoff
+
+- End every work session, including pauses and partially completed tasks, with a concise status summary.
+- Always state: what was completed, what remains, the recommended next action, and what is required from the user.
+- Include relevant verification results, blockers, and pending Git state in those sections without repeating the full work log.
+- If no user action is required, say so explicitly.
+
+## Project Tracking
+
+- `docs/project/ROADMAP.md` is the phase-level source of truth; it must show the current phase, each phase status, milestone checkboxes, and exit evidence.
+- `docs/project/TODO.md` is the task-level source of truth; group tasks under matching phase IDs (`P0`, `P1`, and so on) and give each task a stable ID such as `P1-03`.
+- Update roadmap status/progress and TODO checkboxes in the same change whenever work completes or phase scope changes.
+- Mark a phase complete only after its exit gate passes with repository, CI, or runtime evidence; implementation alone is not completion.
 
 ## Style
 

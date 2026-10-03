@@ -4,7 +4,8 @@ How to deploy a demo project on the AI Lab platform stack.
 
 ## General workflow
 
-1. Provision server with `setup.sh` and deploy platform stack (`docker compose up -d`)
+1. Provision the server with `setup.sh` and deploy the required preset from
+   [Compose Profiles](../operations/compose-profiles.md)
 1. Clone the demo project onto the server
 1. Create a dedicated database in `demo-db` for the project
 1. Configure AI platforms via web UI (model providers, knowledge bases, apps)
@@ -17,7 +18,7 @@ How to deploy a demo project on the AI Lab platform stack.
 - Platform stack running and accessible via HTTPS
 - Domain with DNS A-records pointing to the server (wildcard `*.domain` recommended)
 - External API keys ready (OpenAI, Telegram, etc.)
-- Familiarity with [integration guide](../integration-guide.md) for internal service URLs
+- Familiarity with [integration guide](../integrations/platform-integration.md) for internal service URLs
 
 ## Where to find project-specific guides
 

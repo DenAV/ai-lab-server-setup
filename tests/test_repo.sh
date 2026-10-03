@@ -39,14 +39,24 @@ REQUIRED_FILES=(
   "setup.sh"
   "docker-compose.yml"
   "docker-compose.workers.yml"
+  "config/components.yml"
+  "config/litellm-config.yml"
+  "config/litellm-contracts.yml"
   "config/fail2ban.conf"
   "config/bash_aliases"
   "config/dify-nginx.conf"
   "scripts/generate-env.sh"
   "scripts/validate.sh"
   "scripts/collect-diagnostics.sh"
+  "scripts/validate-component-catalog.py"
+  "scripts/validate-compose-presets.py"
+  "scripts/validate-doc-links.py"
+  "scripts/validate-litellm-contracts.py"
+  "scripts/validate-project-tracking.py"
   "examples/cloud-config.yml"
   "docs/README.md"
+  "docs/project/ROADMAP.md"
+  "docs/project/TODO.md"
 )
 
 for f in "${REQUIRED_FILES[@]}"; do
@@ -103,6 +113,9 @@ YAML_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "compose.openclaw-cli.yml"
+  "config/components.yml"
+  "config/litellm-config.yml"
+  "config/litellm-contracts.yml"
   "examples/cloud-config.yml"
 )
 
@@ -127,37 +140,78 @@ else
 fi
 
 # =========================================================================
-# 5. Docker Compose config validation
+# 5. Component catalog
+# =========================================================================
+echo ""
+echo "Component catalog:"
+if command -v python3 &>/dev/null && python3 -c "import yaml" 2>/dev/null; then
+  if python3 "${PROJECT_DIR}/scripts/validate-component-catalog.py" &&
+    python3 "${PROJECT_DIR}/scripts/validate-litellm-contracts.py"; then
+    pass "component catalog and LiteLLM contracts valid"
+  else
+    fail "component catalog or LiteLLM contract validation failed"
+  fi
+else
+  fail "python3 and PyYAML are required for component catalog validation"
+fi
+
+# =========================================================================
+# 6. Docker Compose config validation
 # =========================================================================
 echo ""
 echo "Docker Compose:"
 if command -v docker &>/dev/null && docker compose version &>/dev/null; then
-  # Use .env.example to provide required variables
-  if docker compose -f "${PROJECT_DIR}/docker-compose.yml" \
-    --env-file "${PROJECT_DIR}/.env.example" \
-    config --quiet 2>/dev/null; then
-    pass "docker-compose.yml valid"
+  validate_compose() {
+    local name="$1"
+    shift
+    local args=()
+    local file
+    for file in "$@"; do
+      args+=("-f" "${PROJECT_DIR}/${file}")
+    done
+    if docker compose "${args[@]}" \
+      --env-file "${PROJECT_DIR}/.env.example" \
+      config --quiet 2>/dev/null; then
+      pass "${name} Compose model valid"
+    else
+      fail "${name} Compose model invalid"
+    fi
+  }
+
+  validate_compose "base" "docker-compose.yml"
+  validate_compose "workers overlay" "docker-compose.yml" "docker-compose.workers.yml"
+  validate_compose "OpenClaw overlay" "docker-compose.yml" "compose.openclaw-cli.yml"
+  validate_compose "combined overlays" \
+    "docker-compose.yml" "docker-compose.workers.yml" "compose.openclaw-cli.yml"
+  if python3 "${PROJECT_DIR}/scripts/validate-compose-presets.py"; then
+    pass "Compose preset service closures valid"
   else
-    fail "docker-compose.yml — config error"
+    fail "Compose preset service closures invalid"
   fi
 else
   skip "docker compose not available"
 fi
 
 # =========================================================================
-# 6. .env.example completeness
+# 7. .env.example completeness
 # =========================================================================
 echo ""
 echo "Environment:"
 
-# Extract variables referenced in docker-compose.yml
-COMPOSE_VARS=$(grep -oP '\$\{(\w+)' "${PROJECT_DIR}/docker-compose.yml" | sed 's/\${//' | sort -u)
+# Extract variables referenced in Compose files
+COMPOSE_VARS=$(grep -hoP '\$\{(\w+)' \
+  "${PROJECT_DIR}/docker-compose.yml" \
+  "${PROJECT_DIR}/docker-compose.workers.yml" \
+  "${PROJECT_DIR}/compose.openclaw-cli.yml" | sed 's/\${//' | sort -u)
 ENV_VARS=$(grep -oP '^\w+=' "${PROJECT_DIR}/.env.example" | sed 's/=//' | sort -u)
 
 MISSING_VARS=0
 for var in ${COMPOSE_VARS}; do
   # Skip variables with defaults (:-) in compose
-  if grep -qP "\\\$\{${var}:-" "${PROJECT_DIR}/docker-compose.yml"; then
+  if grep -qP "\\\$\{${var}:-" \
+    "${PROJECT_DIR}/docker-compose.yml" \
+    "${PROJECT_DIR}/docker-compose.workers.yml" \
+    "${PROJECT_DIR}/compose.openclaw-cli.yml"; then
     continue
   fi
   if ! echo "${ENV_VARS}" | grep -q "^${var}$"; then
@@ -170,7 +224,7 @@ if [ "${MISSING_VARS}" -eq 0 ]; then
 fi
 
 # =========================================================================
-# 7. No secrets in committed files
+# 8. No secrets in committed files
 # =========================================================================
 echo ""
 echo "Security:"
@@ -200,13 +254,13 @@ else
 fi
 
 # =========================================================================
-# 8. Documentation links
+# 9. Documentation links
 # =========================================================================
 echo ""
 echo "Documentation:"
 
 # Check that all setup guides referenced in README exist
-GUIDE_LINKS=$(grep -oP 'docs/setup-[[:alnum:]_-]+\.md' "${PROJECT_DIR}/README.md" | sort -u)
+GUIDE_LINKS=$(grep -oP 'docs/platforms/setup-[[:alnum:]_-]+\.md' "${PROJECT_DIR}/README.md" | sort -u)
 for guide in ${GUIDE_LINKS}; do
   if [ -f "${PROJECT_DIR}/${guide}" ]; then
     pass "${guide} exists"
@@ -220,6 +274,18 @@ if grep -q "TROUBLESHOOTING.md" "${PROJECT_DIR}/README.md"; then
   pass "TROUBLESHOOTING.md linked in README"
 else
   fail "TROUBLESHOOTING.md not linked in README"
+fi
+
+if python3 "${PROJECT_DIR}/scripts/validate-doc-links.py"; then
+  pass "Markdown relative links valid"
+else
+  fail "Markdown relative links invalid"
+fi
+
+if python3 "${PROJECT_DIR}/scripts/validate-project-tracking.py"; then
+  pass "Roadmap and TODO tracking consistent"
+else
+  fail "Roadmap and TODO tracking inconsistent"
 fi
 
 # =========================================================================

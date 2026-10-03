@@ -35,9 +35,15 @@ jobs:
           shellcheck --severity=error scripts/validate.sh
           shellcheck --severity=error scripts/collect-diagnostics.sh
 
+      - name: Docker Compose availability
+        run: docker compose version
+
       - name: YAML lint
         run: |
           yamllint -d relaxed docker-compose.yml
+          yamllint -d relaxed config/components.yml
+          yamllint -d relaxed config/litellm-config.yml
+          yamllint -d relaxed config/litellm-contracts.yml
           yamllint -d relaxed examples/cloud-config.yml
 
       - name: Repository tests

@@ -115,7 +115,8 @@ docker compose exec ollama ollama pull nomic-embed-text
    - Base URL: `http://ollama-compose:11434`
 3. For embeddings, add `nomic-embed-text` the same way
 
-> Enable the `local-model` profile as described in [setup-ollama.md](setup-ollama.md).
+> Enable the `local-model` profile as described in
+> [Ollama Setup](../platforms/setup-ollama.md).
 
 ## Qdrant — Vector Database for RAG
 

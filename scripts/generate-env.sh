@@ -55,6 +55,10 @@ N8N_ENCRYPTION_KEY="$(gen_secret 32)"
 
 OPENCLAW_GATEWAY_TOKEN="$(gen_secret 48)"
 
+LITELLM_DB_PASS="$(gen_password)"
+LITELLM_MASTER_KEY="sk-$(gen_secret 48)"
+LITELLM_SALT_KEY="sk-$(gen_secret 48)"
+
 QDRANT_API_KEY="$(gen_secret 32)"
 
 LANGFUSE_SECRET="$(gen_secret 32)"
@@ -102,6 +106,15 @@ OPENCLAW_VERSION=2026.9.3
 OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
 COMPOSE_PROFILES=
 OLLAMA_VERSION=0.34.0
+
+# =============================================================================
+# LiteLLM
+# =============================================================================
+LITELLM_VERSION=v1.103.2
+LITELLM_DB_VERSION=16.15-alpine
+LITELLM_DB_PASSWORD=${LITELLM_DB_PASS}
+LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
 
 # =============================================================================
 # Qdrant
@@ -164,6 +177,11 @@ Gateway Token: ${OPENCLAW_GATEWAY_TOKEN}
 === Qdrant ===
 API Key:  ${QDRANT_API_KEY}
 
+=== LiteLLM ===
+Master Key: ${LITELLM_MASTER_KEY}
+DB Password: ${LITELLM_DB_PASS}
+Provider credentials: add through the loopback-only LiteLLM Admin UI
+
 === Demo DB ===
 User:     demo
 Password: ${DEMO_DB_PASS}
@@ -190,6 +208,8 @@ echo "  Email:   ${ACME_EMAIL}"
 echo "  Secrets: ${SECRETS_FILE}"
 echo ""
 echo "  Next steps:"
+echo "    Set COMPOSE_PROFILES for a preset; see docs/operations/compose-profiles.md"
+echo "    docker compose config --services"
 echo "    docker compose up -d"
 echo "    cat .secrets    # view credentials"
 echo "============================================="
