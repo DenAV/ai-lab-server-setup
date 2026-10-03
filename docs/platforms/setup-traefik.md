@@ -5,15 +5,17 @@
 Traefik is a cloud-native reverse proxy that automatically discovers Docker
 containers and provisions TLS certificates via Let's Encrypt.
 
-- **Ports:** 80 (HTTP → redirect), 443 (HTTPS)
+- **Ports:** 80 (HTTP → redirect) and 443 (HTTPS); upstream port 80 is optional with DNS-01
 - **Dashboard:** disabled by default (security)
-- **TLS:** automatic via Let's Encrypt HTTP challenge
+- **TLS:** automatic via selectable Let's Encrypt HTTP-01 or Cloudflare DNS-01
 - **Config:** Docker labels on each service
 
 ## Prerequisites
 
 - A domain pointing to the server IP (A record)
-- Ports 80 and 443 open in firewall (done by `setup.sh`)
+- Port 443 open in the host and upstream firewalls
+- Port 80 open when using the default HTTP-01 mode
+- A restricted Cloudflare DNS API token when using the optional DNS-01 overlay
 
 ## Configuration
 
@@ -35,7 +37,9 @@ In `.env`:
 ```bash
 DOMAIN=example.com           # Your domain
 ACME_EMAIL=user@example.com  # Let's Encrypt notifications
-TRAEFIK_VERSION=3.2
+TRAEFIK_VERSION=3.6
+# Required only by compose.traefik-cloudflare.yml
+CLOUDFLARE_DNS_API_TOKEN_FILE=/home/lab/.config/ai-lab/secrets/cloudflare-dns-api-token
 ```
 
 ## How It Works
@@ -44,7 +48,7 @@ TRAEFIK_VERSION=3.2
 2. Reads routing rules from container labels (`Host`, `entrypoints`)
 3. Automatically requests TLS certificates from Let's Encrypt
 4. Routes HTTPS traffic to the correct container
-5. HTTP (port 80) redirects to HTTPS automatically
+5. HTTP redirects to HTTPS through Traefik or the upstream proxy
 
 ## Service Labels Reference
 
@@ -116,32 +120,107 @@ Access via `http://<server-ip>:5678`, etc. No TLS in this mode.
 
 ## Certificate Management
 
-### TODO: Decide Cloudflare and origin TLS strategy
+### Option 1: HTTP-01 (Default)
 
-The reported Cloudflare certificate covers `*.example.com` and `example.com`;
-confirm its location and coverage before selecting an origin TLS strategy.
-Traefik separately stores origin certificates for `n8n.<domain>`,
-`trace.<domain>`, and `dify.<domain>`. The three origin certificates were
-expired on September 28, 2026. These DNS records are proxied through Cloudflare,
-so the current HTTP-01 challenge reaches Cloudflare before Traefik. Proxied DNS
-alone does not prevent HTTP-01 validation: the observed `522` response means
-Cloudflare timed out contacting the origin. An edge certificate does not make
-an expired origin certificate valid for Cloudflare Full (strict) or direct
-access to Traefik.
+The base `docker-compose.yml` uses HTTP-01. Select this mode when DNS records point
+directly to the origin or a proxy passes `/.well-known/acme-challenge/` to Traefik.
+Inbound TCP 80 must reach Traefik through every upstream firewall.
 
-- [ ] Confirm Cloudflare SSL/TLS mode, the actual edge certificate coverage,
-  and whether direct access to the origin is required.
-- [ ] Determine why HTTP-01 requests receive `522` (origin reachability,
-  firewall, and DNS address records) before attributing the failure to proxying.
-- [ ] Choose the origin certificate source: Let's Encrypt via Cloudflare DNS-01
-  (including wildcard issuance if needed), or Cloudflare Origin CA for traffic
-  that always passes through Cloudflare. Review DNS/API permissions and renewal
-  before changing the resolver. Do not assume HTTP-01 works through the current
-  Cloudflare proxy configuration.
-- [ ] Test the chosen configuration and rollback on one hostname before applying
-  it to the remaining services; verify expiry and trust both through Cloudflare
-  and directly against Traefik with the intended TLS mode.
-- [ ] Add expiry monitoring for the certificates actually used at the origin.
+```bash
+docker compose -f docker-compose.yml config --quiet
+docker compose -f docker-compose.yml up -d --force-recreate traefik
+```
+
+If `.env` defines `COMPOSE_FILE`, remove `compose.traefik-cloudflare.yml` from that value
+before recreating Traefik. Keep `docker-compose.yml` and any unrelated overlays.
+
+### Option 2: Cloudflare DNS-01
+
+Use `compose.traefik-cloudflare.yml` when Cloudflare hosts the authoritative DNS zone,
+records remain proxied, or upstream TCP 80 must stay closed. The overlay keeps the same
+`letsencrypt` resolver and certificate storage but replaces HTTP-01 with DNS-01. It does
+not remove Traefik's host port 80 listener; the cloud firewall remains responsible for
+blocking external TCP 80 in this mode.
+
+Create a Cloudflare API token scoped to one zone with only:
+
+- `Zone / Zone / Read`
+- `Zone / DNS / Edit`
+
+Never place the token in Git, `.env`, Compose labels, or chat. Save it directly on the
+server without exposing it in shell history:
+
+```bash
+TOKEN_FILE=/home/lab/.config/ai-lab/secrets/cloudflare-dns-api-token
+install -d -m 700 /home/lab/.config/ai-lab/secrets
+test ! -e "${TOKEN_FILE}" || { echo "Token file already exists; refusing to overwrite"; exit 1; }
+install -m 600 /dev/null "${TOKEN_FILE}"
+read -rsp "Cloudflare DNS API token: " CF_TOKEN && printf '\n'
+printf '%s' "${CF_TOKEN}" > "${TOKEN_FILE}"
+unset CF_TOKEN
+```
+
+Confirm ownership and permissions without printing the token:
+
+```bash
+stat -c '%U:%G %a %n' /home/lab/.config/ai-lab/secrets/cloudflare-dns-api-token
+```
+
+Expected owner is `lab`, mode is `600`. Add only the path to the existing server `.env`:
+
+```dotenv
+CLOUDFLARE_DNS_API_TOKEN_FILE=/home/lab/.config/ai-lab/secrets/cloudflare-dns-api-token
+```
+
+Do not rerun `scripts/generate-env.sh` on an existing server. Persist the overlay in the
+existing `COMPOSE_FILE` value; preserve other host-specific overlays:
+
+```dotenv
+COMPOSE_FILE=docker-compose.yml:compose.traefik-cloudflare.yml
+```
+
+Validate before rollout:
+
+```bash
+TOKEN_FILE=$(sed -n 's/^CLOUDFLARE_DNS_API_TOKEN_FILE=//p' .env | tail -n 1)
+test -n "${TOKEN_FILE}" && test -s "${TOKEN_FILE}"
+test "$(stat -c '%a' "${TOKEN_FILE}")" = "600"
+docker compose config --quiet
+docker compose config | grep -q 'dnschallenge.provider=cloudflare'
+docker compose config | grep -qv 'acme.httpchallenge'
+```
+
+Stop before recreating Traefik if any command fails. These checks validate only presence
+and permissions; they never print the token.
+
+Back up the `traefik-certs` volume, then recreate only Traefik:
+
+```bash
+docker compose up -d --force-recreate traefik
+docker compose logs --tail=100 traefik
+```
+
+Verify the certificate directly at the origin, not through Cloudflare. Repeat for every
+active hostname and stop if hostname or chain validation fails, or if less than 30 days
+remain:
+
+```bash
+HOST=n8n.example.com
+ORIGIN_IP=192.0.2.10
+openssl s_client -connect "${ORIGIN_IP}:443" -servername "${HOST}" \
+  -verify_hostname "${HOST}" -verify_return_error </dev/null
+openssl s_client -connect "${ORIGIN_IP}:443" -servername "${HOST}" </dev/null 2>/dev/null \
+  | openssl x509 -checkend 2592000 -noout
+```
+
+Do not print `docker compose config` into support logs without review: it exposes secret
+file paths, although not the token value. With upstream TCP 80 closed, enable Cloudflare
+**Always Use HTTPS** so HTTP requests redirect at the edge. After origin certificates are
+renewed, use Cloudflare SSL/TLS mode **Full (strict)**.
+
+To return to HTTP-01, first open upstream TCP 80, remove the Cloudflare overlay from
+`COMPOSE_FILE`, recreate Traefik, and verify a renewal. The Cloudflare token can then be
+revoked and its local file removed.
 
 Do not delete the shared `traefik-certs` volume to force renewal: it contains
 certificates for multiple services and deleting it does not fix a failing ACME

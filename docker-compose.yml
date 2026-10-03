@@ -9,6 +9,15 @@
 networks:
   ai-net:
     driver: bridge
+  litellm-backend:
+    driver: bridge
+    internal: true
+  litellm-clients:
+    driver: bridge
+    internal: true
+  litellm-upstreams:
+    driver: bridge
+    internal: true
   openclaw-net:
     driver: bridge
   traefik-public:
@@ -120,8 +129,10 @@ services:
     volumes:
       - "n8n-data:/home/node/.n8n"
     networks:
-      - ai-net
-      - traefik-public
+      ai-net:
+        gw_priority: 1
+      litellm-clients: {}
+      traefik-public: {}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.n8n.rule=Host(`n8n.${DOMAIN}`)"
@@ -189,8 +200,10 @@ services:
     volumes:
       - "ollama-data:/root/.ollama"
     networks:
-      - ai-net
-      - openclaw-net
+      ai-net:
+        gw_priority: 1
+      litellm-upstreams: {}
+      openclaw-net: {}
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
@@ -252,8 +265,10 @@ services:
       - TELEMETRY_ENABLED=false
       - HOSTNAME=0.0.0.0
     networks:
-      - ai-net
-      - traefik-public
+      ai-net:
+        gw_priority: 1
+      litellm-upstreams: {}
+      traefik-public: {}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.langfuse.rule=Host(`trace.${DOMAIN}`)"
@@ -283,7 +298,7 @@ services:
     volumes:
       - "litellm-db-data:/var/lib/postgresql/data"
     networks:
-      - ai-net
+      - litellm-backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
       interval: 10s
@@ -308,15 +323,32 @@ services:
     volumes:
       - "./config/litellm-config.yml:/app/config.yaml:ro"
     networks:
-      - ai-net
-      - traefik-public
+      litellm-backend: {}
+      litellm-clients: {}
+      litellm-upstreams: {}
+      traefik-public:
+        gw_priority: 1
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.litellm.rule=Host(`${LITELLM_SUBDOMAIN}.${DOMAIN}`)"
-      - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.litellm.middlewares=secure-headers@docker"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
+      traefik.enable: "true"
+      traefik.http.routers.litellm-ui.rule: "Host(`${LITELLM_SUBDOMAIN}.${DOMAIN}`)"
+      traefik.http.routers.litellm-ui.entrypoints: websecure
+      traefik.http.routers.litellm-ui.priority: "100"
+      traefik.http.routers.litellm-ui.tls.certresolver: letsencrypt
+      traefik.http.routers.litellm-ui.middlewares: litellm-ui-allowlist@docker,secure-headers@docker
+      traefik.http.routers.litellm-public-deny.rule: >-
+        Host(`${LITELLM_SUBDOMAIN}.${DOMAIN}`) &&
+        (Path(`/`) || Path(`/openapi.json`) || PathPrefix(`/docs`) ||
+        PathPrefix(`/redoc`) || PathPrefix(`/swagger`) || PathPrefix(`/scalar`) ||
+        PathPrefix(`/health`) || PathPrefix(`/public/`) ||
+        PathRegexp(`^/(v1/)?(chat/completions|completions|embeddings|responses|models|images|audio|rerank|moderations|messages)(/.*)?$$`))
+      traefik.http.routers.litellm-public-deny.entrypoints: websecure
+      traefik.http.routers.litellm-public-deny.priority: "200"
+      traefik.http.routers.litellm-public-deny.tls.certresolver: letsencrypt
+      traefik.http.routers.litellm-public-deny.middlewares: secure-headers@docker,litellm-public-deny@docker
+      traefik.http.routers.litellm-public-deny.service: litellm
+      traefik.http.middlewares.litellm-ui-allowlist.ipallowlist.sourcerange: ${LITELLM_UI_ALLOWLIST:-127.0.0.1/32}
+      traefik.http.middlewares.litellm-public-deny.ipallowlist.sourcerange: 127.0.0.1/32
+      traefik.http.services.litellm.loadbalancer.server.port: "4000"
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:4000/health/readiness', timeout=5)\""]
       interval: 30s
@@ -423,7 +455,9 @@ services:
     volumes:
       - "dify-plugin-data:/app/storage"
     networks:
-      - ai-net
+      ai-net:
+        gw_priority: 1
+      litellm-clients: {}
 
   dify-api:
     profiles: ["dify"]
@@ -473,7 +507,9 @@ services:
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
-      - ai-net
+      ai-net:
+        gw_priority: 1
+      litellm-clients: {}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/health', timeout=5)\""]
       interval: 30s
@@ -519,7 +555,9 @@ services:
     volumes:
       - "dify-storage:/app/api/storage"
     networks:
-      - ai-net
+      ai-net:
+        gw_priority: 1
+      litellm-clients: {}
 
   dify-beat:
     profiles: ["dify"]

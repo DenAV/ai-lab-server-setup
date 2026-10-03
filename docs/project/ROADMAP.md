@@ -11,7 +11,7 @@ phase and task IDs in [Project TODO](TODO.md).
 | Phase | Status | TODO progress | Next gate |
 |-------|--------|--------------:|-----------|
 | [P0](#p0-baseline-and-component-catalog) | Complete | 5/5 | Complete |
-| [P1](#p1-compose-profile-foundation) | In progress | 6/8 | Clean-host preset and LiteLLM acceptance |
+| [P1](#p1-compose-profile-foundation) | In progress | 8/10 | Clean-host preset and LiteLLM acceptance |
 | [P2](#p2-deployment-selector) | Planned | 0/14 | Start after P1 exit gate |
 | [P3](#p3-selection-aware-operations) | Planned | 1/7 | Complete lifecycle coverage |
 | [P4](#p4-existing-host-migration) | In progress | 4/5 | Idempotency and rollback test |
@@ -53,6 +53,8 @@ Evidence: `config/components.yml`, `config/litellm-contracts.yml`,
 - [x] Add LiteLLM Proxy and its dedicated database.
 - [x] Define `n8n-cloud`, `dify-cloud`, and `openclaw` presets.
 - [x] Validate resolved Compose service closures in CI.
+- [x] Isolate LiteLLM networks and protect its public UI with Cloudflare WAF and origin controls.
+- [x] Support selectable HTTP-01 and Cloudflare DNS-01 certificate modes.
 - [ ] Smoke-test each preset on a clean host without unrelated services.
 - [ ] Execute LiteLLM provider, client, key-isolation, persistence, and redaction tests.
 - [ ] **Exit gate:** each preset starts only its declared dependency closure and passes

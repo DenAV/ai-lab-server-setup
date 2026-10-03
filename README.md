@@ -89,6 +89,7 @@ The script auto-clones the repo for config files if not running from a local cop
 | [docker-compose.yml](docker-compose.yml) | Profile-based AI platform stack with mandatory Traefik |
 | [docker-compose.workers.yml](docker-compose.workers.yml) | Optional internal worker services for n8n workflows |
 | [compose.openclaw-cli.yml](compose.openclaw-cli.yml) | Optional Docker CLI overlay for an existing rootless OpenClaw sandbox |
+| [compose.traefik-cloudflare.yml](compose.traefik-cloudflare.yml) | Optional Cloudflare DNS-01 overlay for Traefik certificates |
 | [.env.example](.env.example) | Environment variables for docker-compose |
 | [scripts/generate-env.sh](scripts/generate-env.sh) | Generate .env with auto-generated secrets (only domain + email needed) |
 | [scripts/validate.sh](scripts/validate.sh) | Post-setup health check |

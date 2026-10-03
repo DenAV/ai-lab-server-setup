@@ -256,7 +256,10 @@ security_controls:
   - Store upstream provider credentials only in LiteLLM secret inputs
   - Keep the LiteLLM master key out of n8n and Dify
   - Issue separate model-limited virtual keys to n8n and Dify
-  - Expose management routes and the Admin UI only through authenticated HTTPS
+  - Require a Cloudflare WAF Managed Challenge before public Admin UI ingress
+  - Restrict public Admin UI ingress to current Cloudflare edge CIDRs
+  - Deny declared inference, schema, health, and public metadata routes at public ingress
+  - Isolate the database, declared clients, and optional upstreams on dedicated networks
   - Set litellm_settings.turn_off_message_logging to true before client traffic
   - Do not log key values or provider credentials
 
@@ -284,6 +287,8 @@ acceptance_tests:
   provider-tool-round-trip: Selected model completes a deterministic tool round trip
   langfuse-v2-callback: Redacted test trace reaches Langfuse v2 without prompt or response content
   logging-content-redaction: Sentinel prompt and response content are absent from logs and traces
+  public-ingress-deny: Public ingress requires a WAF challenge and rejects declared inference, schema, health, and metadata routes
+  network-isolation: Only declared clients can resolve LiteLLM on its private client network
 
 sources:
   - title: LiteLLM Supported Endpoints
