@@ -22,6 +22,7 @@ stored in PostgreSQL and must remain stable after the first provider is added.
 
 - prompt and response logging is disabled;
 - database-backed model management is enabled;
+- forwarded client IPs are accepted only from the isolated Traefik ingress network;
 - the static model list stays empty to avoid a second source of truth.
 
 ## Static Preview
@@ -54,7 +55,15 @@ ranges from `https://www.cloudflare.com/ips/` before deployment:
 
 ```bash
 LITELLM_UI_ALLOWLIST=<cloudflare-ipv4-cidrs>,<cloudflare-ipv6-cidrs>
+TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS=<cloudflare-ipv4-cidrs>,<cloudflare-ipv6-cidrs>
+LITELLM_MCP_XFF_NUM_TRUSTED_HOPS=2
 ```
+
+`LITELLM_UI_ALLOWLIST` controls who can reach the UI router.
+`TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS` independently controls which upstream proxies
+may supply `X-Forwarded-*`; do not add operator or client CIDRs to it. Set the MCP hop
+count to the number of proxies that append `X-Forwarded-For`: `1` for Traefik alone and
+`2` for Cloudflare followed by Traefik.
 
 Then open:
 
@@ -77,8 +86,9 @@ hostname.
 
 Use the optional `compose.traefik-cloudflare.yml` DNS-01 overlay when upstream TCP 80 is
 closed. Keep Cloudflare SSL/TLS mode at `Full (strict)` after origin certificates are
-valid. Do not configure Traefik to trust arbitrary `CF-Connecting-IP` or
-`X-Forwarded-For` values: this design validates the direct peer as a Cloudflare edge.
+valid. The trusted proxy list must contain only current Cloudflare edge ranges. Traefik
+then appends its peer to `X-Forwarded-For`, and LiteLLM resolves the client from the
+right-hand trusted chain instead of accepting a spoofable leftmost value.
 
 For unrestricted administration or when public routing is unavailable, use the loopback
 recovery path:

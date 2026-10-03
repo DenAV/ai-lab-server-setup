@@ -38,6 +38,8 @@ In `.env`:
 DOMAIN=example.com           # Your domain
 ACME_EMAIL=user@example.com  # Let's Encrypt notifications
 TRAEFIK_VERSION=3.6
+# Keep loopback-only unless an upstream proxy is in use.
+TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS=127.0.0.1/32
 # Required only by compose.traefik-cloudflare.yml
 CLOUDFLARE_DNS_API_TOKEN_FILE=/home/lab/.config/ai-lab/secrets/cloudflare-dns-api-token
 ```
@@ -49,6 +51,10 @@ CLOUDFLARE_DNS_API_TOKEN_FILE=/home/lab/.config/ai-lab/secrets/cloudflare-dns-ap
 3. Automatically requests TLS certificates from Let's Encrypt
 4. Routes HTTPS traffic to the correct container
 5. HTTP redirects to HTTPS through Traefik or the upstream proxy
+
+Traefik accepts incoming `X-Forwarded-*` values only from
+`TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS`. For Cloudflare-proxied records, set this to the
+current official Cloudflare IPv4 and IPv6 ranges. Never use `0.0.0.0/0` or `::/0`.
 
 ## Service Labels Reference
 

@@ -255,7 +255,7 @@ components:
       required: []
       optional: [langfuse, ollama]
     conflicts: []
-    networks: [litellm-backend, litellm-clients, litellm-upstreams, traefik-public]
+    networks: [litellm-backend, litellm-clients, litellm-ingress, litellm-upstreams, traefik-public]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -438,7 +438,7 @@ components:
       required: []
       optional: []
     conflicts: []
-    networks: [traefik-public]
+    networks: [litellm-ingress, traefik-public]
     storage:
       - type: bind
         compose_file: docker-compose.yml

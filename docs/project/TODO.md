@@ -33,8 +33,8 @@ counts must match the roadmap in the same change.
 - [x] **P1-06** Verify in CI that `docker compose config` succeeds for every preset and
   overlay without resolving unrelated services.
 - [x] **P1-09** Isolate LiteLLM database, client, and upstream networks; restrict public
-  ingress with a Cloudflare WAF challenge and trusted edge CIDRs; deny declared model,
-  schema, health, and metadata routes.
+  ingress with a dedicated trusted-proxy network, Cloudflare WAF challenge, and trusted
+  edge CIDRs; deny declared model, schema, health, and metadata routes.
 - [x] **P1-10** Support default HTTP-01 and optional Cloudflare DNS-01 certificate modes
   without opening upstream TCP 80 for DNS-01 deployments.
 - [ ] **P1-07** Smoke-test each preset on a clean host and confirm the running service
