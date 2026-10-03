@@ -193,6 +193,38 @@ docker compose up -d
 
 Staging certificates are untrusted by browsers but have no rate limits.
 
+### ACME HTTP-01 returns Cloudflare 522
+
+**Symptom:** Traefik logs show `Invalid response` for
+`/.well-known/acme-challenge/` with Cloudflare status `522`.
+
+**Cause:** Cloudflare cannot establish the origin connection. Cloudflare Proxy alone does
+not prevent HTTP-01; `522` means the request timed out before reaching Traefik. A common
+case is an upstream cloud firewall that allows TCP 443 but blocks TCP 80.
+
+Check each boundary:
+
+```bash
+sudo ss -ltnp
+sudo ufw status verbose
+curl -I -H 'Host: n8n.example.com' http://127.0.0.1/.well-known/acme-challenge/test
+```
+
+If TCP 80 must remain closed, use `compose.traefik-cloudflare.yml` and the DNS-01
+instructions in `docs/platforms/setup-traefik.md`. A WAF skip rule cannot fix a TCP
+timeout at the cloud firewall.
+
+### Cloudflare returns 526 after enabling Full (strict)
+
+**Symptom:** HTTPS worked in Cloudflare `Full` mode but returns `526` in `Full (strict)`.
+
+**Cause:** The origin certificate is expired, untrusted, or does not cover the requested
+hostname. The Cloudflare edge certificate does not replace the Traefik origin certificate.
+
+**Fix:** Repair HTTP-01 reachability or enable the DNS-01 overlay, confirm Traefik issued
+a current certificate, and only then enable `Full (strict)`. Never delete `acme.json` to
+force renewal.
+
 ## n8n
 
 ### Mismatching encryption keys

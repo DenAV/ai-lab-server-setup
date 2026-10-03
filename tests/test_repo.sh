@@ -40,6 +40,7 @@ REQUIRED_FILES=(
   "setup.sh"
   "docker-compose.yml"
   "docker-compose.workers.yml"
+  "compose.traefik-cloudflare.yml"
   "config/components.yml"
   "config/litellm-config.yml"
   "config/litellm-contracts.yml"
@@ -114,6 +115,7 @@ YAML_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "compose.openclaw-cli.yml"
+  "compose.traefik-cloudflare.yml"
   "config/components.yml"
   "config/litellm-config.yml"
   "config/litellm-contracts.yml"
@@ -162,6 +164,10 @@ fi
 echo ""
 echo "Docker Compose:"
 if command -v docker &>/dev/null && docker compose version &>/dev/null; then
+  COMPOSE_TEST_SECRET=$(mktemp)
+  printf '%s\n' 'compose-config-test-token' > "${COMPOSE_TEST_SECRET}"
+  trap 'rm -f "${COMPOSE_TEST_SECRET}"' EXIT
+
   validate_compose() {
     local name="$1"
     shift
@@ -170,7 +176,7 @@ if command -v docker &>/dev/null && docker compose version &>/dev/null; then
     for file in "$@"; do
       args+=("-f" "${PROJECT_DIR}/${file}")
     done
-    if docker compose "${args[@]}" \
+    if CLOUDFLARE_DNS_API_TOKEN_FILE="${COMPOSE_TEST_SECRET}" docker compose "${args[@]}" \
       --env-file "${PROJECT_DIR}/.env.example" \
       config --quiet 2>/dev/null; then
       pass "${name} Compose model valid"
@@ -182,13 +188,18 @@ if command -v docker &>/dev/null && docker compose version &>/dev/null; then
   validate_compose "base" "docker-compose.yml"
   validate_compose "workers overlay" "docker-compose.yml" "docker-compose.workers.yml"
   validate_compose "OpenClaw overlay" "docker-compose.yml" "compose.openclaw-cli.yml"
+  validate_compose "Cloudflare DNS overlay" \
+    "docker-compose.yml" "compose.traefik-cloudflare.yml"
   validate_compose "combined overlays" \
-    "docker-compose.yml" "docker-compose.workers.yml" "compose.openclaw-cli.yml"
+    "docker-compose.yml" "docker-compose.workers.yml" "compose.openclaw-cli.yml" \
+    "compose.traefik-cloudflare.yml"
   if python3 "${PROJECT_DIR}/scripts/validate-compose-presets.py"; then
     pass "Compose preset service closures valid"
   else
     fail "Compose preset service closures invalid"
   fi
+  rm -f "${COMPOSE_TEST_SECRET}"
+  trap - EXIT
 else
   skip "docker compose not available"
 fi
@@ -203,7 +214,8 @@ echo "Environment:"
 COMPOSE_VARS=$(grep -hoP '\$\{(\w+)' \
   "${PROJECT_DIR}/docker-compose.yml" \
   "${PROJECT_DIR}/docker-compose.workers.yml" \
-  "${PROJECT_DIR}/compose.openclaw-cli.yml" | sed 's/\${//' | sort -u)
+  "${PROJECT_DIR}/compose.openclaw-cli.yml" \
+  "${PROJECT_DIR}/compose.traefik-cloudflare.yml" | sed 's/\${//' | sort -u)
 ENV_VARS=$(grep -oP '^\w+=' "${PROJECT_DIR}/.env.example" | sed 's/=//' | sort -u)
 
 MISSING_VARS=0
@@ -212,7 +224,8 @@ for var in ${COMPOSE_VARS}; do
   if grep -qP "\\\$\{${var}:-" \
     "${PROJECT_DIR}/docker-compose.yml" \
     "${PROJECT_DIR}/docker-compose.workers.yml" \
-    "${PROJECT_DIR}/compose.openclaw-cli.yml"; then
+    "${PROJECT_DIR}/compose.openclaw-cli.yml" \
+    "${PROJECT_DIR}/compose.traefik-cloudflare.yml"; then
     continue
   fi
   if ! echo "${ENV_VARS}" | grep -q "^${var}$"; then

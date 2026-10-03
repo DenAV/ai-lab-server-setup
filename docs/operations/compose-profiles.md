@@ -54,6 +54,16 @@ COMPOSE_PROFILES=n8n,ffmpeg-worker docker compose \
 For the OpenClaw rootless sandbox client, continue using the reviewed overlay from
 [OpenClaw Rootless Sandbox](openclaw-rootless-sandbox.md).
 
+For Cloudflare DNS-01 certificate issuance, append the optional Traefik overlay without
+changing the selected product profiles:
+
+```bash
+docker compose -f docker-compose.yml -f compose.traefik-cloudflare.yml config --services
+```
+
+Persist it in `COMPOSE_FILE` when selected; see
+[Traefik Certificate Management](../platforms/setup-traefik.md#certificate-management).
+
 ## Data Safety
 
 Removing a profile from `COMPOSE_PROFILES` does not delete its named volumes, but it also

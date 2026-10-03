@@ -3,7 +3,7 @@
 ## Scope
 
 - This repo provisions and operates an Ubuntu 24.04 AI lab server, not an application monorepo.
-- Main entrypoints: `setup.sh` for host provisioning, `docker-compose.yml` for the platform stack, `docker-compose.workers.yml` for optional internal workers, and `scripts/validate.sh` for live health checks.
+- Main entrypoints: `setup.sh` for host provisioning, `docker-compose.yml` for the platform stack, `compose.traefik-cloudflare.yml` for optional DNS-01 certificates, `docker-compose.workers.yml` for optional internal workers, and `scripts/validate.sh` for live health checks.
 - Use relevant OpenCode skills before changing live infrastructure: `dev-docker` for compose/container work, `dev-deployment` for rollout/rollback, `ai-n8n` or `ai-dify` for platform-specific workflow/app issues, and `agent-systematic-debugging` for failures.
 
 ## Local Verification

@@ -4,6 +4,7 @@ compose_files:
   - docker-compose.yml
   - docker-compose.workers.yml
   - compose.openclaw-cli.yml
+  - compose.traefik-cloudflare.yml
 
 presets:
   n8n-cloud:
@@ -64,7 +65,8 @@ host_prerequisites:
   loopback-ssh-tunnel: Operator can reach the loopback-only Gateway through SSH
   model-capacity: Host has enough RAM and disk for explicitly selected models
   openclaw-rootless-sandbox: Dedicated rootless Docker socket and workspace paths exist
-  ports-80-443: Host firewall and upstream network permit inbound TCP 80 and 443
+  cloudflare-dns-api-token: Restricted Cloudflare DNS API token file exists on the host
+  ports-80-443: Host and upstream permit TCP 443, plus TCP 80 when HTTP-01 is selected
   public-dns: Required public hostnames resolve to the server
 
 components:
@@ -117,7 +119,7 @@ components:
       required: [qdrant]
       optional: [ollama]
     conflicts: []
-    networks: [ai-net, traefik-public]
+    networks: [ai-net, litellm-clients, traefik-public]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -219,7 +221,7 @@ components:
       required: []
       optional: []
     conflicts: []
-    networks: [ai-net, traefik-public]
+    networks: [ai-net, litellm-upstreams, traefik-public]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -253,7 +255,7 @@ components:
       required: []
       optional: [langfuse, ollama]
     conflicts: []
-    networks: [ai-net, traefik-public]
+    networks: [litellm-backend, litellm-clients, litellm-upstreams, traefik-public]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -293,7 +295,7 @@ components:
       required: []
       optional: [dify, langfuse, ollama, qdrant]
     conflicts: []
-    networks: [ai-net, traefik-public]
+    networks: [ai-net, litellm-clients, traefik-public]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -331,7 +333,7 @@ components:
       required: []
       optional: []
     conflicts: []
-    networks: [ai-net, openclaw-net]
+    networks: [ai-net, litellm-upstreams, openclaw-net]
     storage:
       - type: volume
         compose_file: docker-compose.yml
@@ -430,7 +432,7 @@ components:
     description: Mandatory public reverse proxy and TLS termination
     required: true
     services: [traefik]
-    compose_files: [docker-compose.yml]
+    compose_files: [compose.traefik-cloudflare.yml, docker-compose.yml]
     profile: null
     dependencies:
       required: []
@@ -465,4 +467,5 @@ components:
         - docker-socket
         - ports-80-443
         - public-dns
-      conditional: {}
+      conditional:
+        compose.traefik-cloudflare.yml: [cloudflare-dns-api-token]

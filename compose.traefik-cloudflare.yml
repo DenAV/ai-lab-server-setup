@@ -1,0 +1,24 @@
+# Optional Traefik ACME overlay for Cloudflare-proxied deployments.
+secrets:
+  cloudflare_dns_api_token:
+    file: ${CLOUDFLARE_DNS_API_TOKEN_FILE:?Set the Cloudflare DNS API token file path}
+
+services:
+  traefik:
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/certs/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+    environment:
+      CF_DNS_API_TOKEN_FILE: /run/secrets/cloudflare_dns_api_token
+    secrets:
+      - cloudflare_dns_api_token

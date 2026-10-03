@@ -1,9 +1,9 @@
 # LiteLLM Setup
 
-LiteLLM is a model gateway for compatible n8n, Dify, and external clients. The `litellm`
+LiteLLM is an internal model gateway for compatible n8n and Dify clients. The `litellm`
 profile starts LiteLLM `v1.103.2` and a dedicated PostgreSQL database. Traefik publishes
-the authenticated API and Admin UI at `https://<litellm-subdomain>.<domain>`; PostgreSQL
-remains internal. Host loopback port 4000 remains available for recovery access.
+an operator-restricted Admin UI at `https://<litellm-subdomain>.<domain>`; model APIs and
+PostgreSQL remain private. Host loopback port 4000 remains available for recovery access.
 
 ## Configuration
 
@@ -37,7 +37,26 @@ profile combinations in [Compose Profiles](../operations/compose-profiles.md).
 
 ## Admin UI And Providers
 
-Set `LITELLM_SUBDOMAIN` in `.env` and create its public DNS record. Open:
+Set `LITELLM_SUBDOMAIN` in `.env` and create its public DNS record with Cloudflare proxying
+enabled. Before allowing Cloudflare traffic at the origin, create a Cloudflare WAF custom
+rule matching the complete LiteLLM hostname with action **Managed Challenge**. The
+challenge reduces automated abuse but does not identify a specific user; LiteLLM login
+remains the user authentication boundary.
+
+```text
+http.host eq "<litellm-subdomain>.<domain>"
+```
+
+Set `LITELLM_UI_ALLOWLIST` to the comma-separated IPv4 and IPv6 ranges from Cloudflare's
+current official IP list. The default `127.0.0.1/32` intentionally denies all remote
+access. Do not copy the documentation ranges below; retrieve and review the current
+ranges from `https://www.cloudflare.com/ips/` before deployment:
+
+```bash
+LITELLM_UI_ALLOWLIST=<cloudflare-ipv4-cidrs>,<cloudflare-ipv6-cidrs>
+```
+
+Then open:
 
 ```text
 https://<litellm-subdomain>.<domain>/ui
@@ -47,7 +66,22 @@ Sign in as `admin` and use `LITELLM_MASTER_KEY` as the bootstrap password. Add p
 credentials under **LLM Credentials**, then add database-backed models under
 **Models + Endpoints**. Credentials are encrypted with `LITELLM_SALT_KEY`.
 
-If public routing is unavailable, use the loopback recovery path:
+The WAF challenge is the automated-traffic boundary, LiteLLM login is the user identity
+boundary, and the Traefik allowlist is the direct-origin boundary. Requests that do not
+come from a Cloudflare edge address are rejected. Traefik also rejects root,
+Swagger/OpenAPI, health, public metadata, model discovery, and the declared
+OpenAI-compatible inference routes. Some schema-driven or model test controls in the
+Admin UI therefore require the loopback recovery path below. n8n and Dify must use
+`http://litellm:4000/v1` on the private `litellm-clients` network instead of the public
+hostname.
+
+Use the optional `compose.traefik-cloudflare.yml` DNS-01 overlay when upstream TCP 80 is
+closed. Keep Cloudflare SSL/TLS mode at `Full (strict)` after origin certificates are
+valid. Do not configure Traefik to trust arbitrary `CF-Connecting-IP` or
+`X-Forwarded-For` values: this design validates the direct peer as a Cloudflare edge.
+
+For unrestricted administration or when public routing is unavailable, use the loopback
+recovery path:
 
 ```bash
 ssh -L 4000:127.0.0.1:4000 lab@<server-ip>
