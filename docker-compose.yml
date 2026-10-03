@@ -18,6 +18,13 @@ networks:
   litellm-upstreams:
     driver: bridge
     internal: true
+  litellm-ingress:
+    name: litellm-ingress
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/29
   openclaw-net:
     driver: bridge
   traefik-public:
@@ -77,6 +84,7 @@ services:
       - "--providers.docker.network=traefik-public"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.forwardedheaders.trustedips=${TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS:-127.0.0.1/32}"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
@@ -92,6 +100,7 @@ services:
       - "traefik-certs:/certs"
     networks:
       - traefik-public
+      - litellm-ingress
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
@@ -318,6 +327,8 @@ services:
       - DATABASE_URL=postgresql://litellm:${LITELLM_DB_PASSWORD}@litellm-db:5432/litellm
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
       - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
+      - LITELLM_TRUSTED_PROXY_RANGES=172.30.0.0/29,${TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS:-127.0.0.1/32}
+      - LITELLM_MCP_XFF_NUM_TRUSTED_HOPS=${LITELLM_MCP_XFF_NUM_TRUSTED_HOPS:-1}
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
@@ -326,10 +337,12 @@ services:
       litellm-backend: {}
       litellm-clients: {}
       litellm-upstreams: {}
+      litellm-ingress: {}
       traefik-public:
         gw_priority: 1
     labels:
       traefik.enable: "true"
+      traefik.docker.network: litellm-ingress
       traefik.http.routers.litellm-ui.rule: "Host(`${LITELLM_SUBDOMAIN}.${DOMAIN}`)"
       traefik.http.routers.litellm-ui.entrypoints: websecure
       traefik.http.routers.litellm-ui.priority: "100"
