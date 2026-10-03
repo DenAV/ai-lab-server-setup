@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Linked roadmap phases to stable TODO task IDs, progress counts, status, and exit evidence
 - Organized documentation into platform, integration, operations, project, and reference sections with link validation
 - Replaced legacy standalone Qdrant commands with authenticated Compose-profile operations
 - Pin n8n to 2.40.7 and Qdrant to v1.19.1, and remove the unused setup-time Qdrant override

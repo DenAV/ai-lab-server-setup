@@ -44,6 +44,13 @@
 - Include relevant verification results, blockers, and pending Git state in those sections without repeating the full work log.
 - If no user action is required, say so explicitly.
 
+## Project Tracking
+
+- `docs/project/ROADMAP.md` is the phase-level source of truth; it must show the current phase, each phase status, milestone checkboxes, and exit evidence.
+- `docs/project/TODO.md` is the task-level source of truth; group tasks under matching phase IDs (`P0`, `P1`, and so on) and give each task a stable ID such as `P1-03`.
+- Update roadmap status/progress and TODO checkboxes in the same change whenever work completes or phase scope changes.
+- Mark a phase complete only after its exit gate passes with repository, CI, or runtime evidence; implementation alone is not completion.
+
 ## Style
 
 - Shell and YAML use 2-space indentation per `.editorconfig`.
