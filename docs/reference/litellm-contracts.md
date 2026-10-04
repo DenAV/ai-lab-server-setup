@@ -61,19 +61,19 @@ pass the acceptance tests in `config/litellm-contracts.yml` before selection.
 
 ## Credential Boundary
 
-- Add upstream provider credentials only through the operator-restricted or loopback
-  LiteLLM Admin UI;
+- Add upstream provider credentials only through the SSH-tunneled loopback LiteLLM Admin UI;
   retain them encrypted in its dedicated database with `LITELLM_SALT_KEY`.
+- Authenticate the `chatgpt/` subscription provider interactively before model creation
+  and persist its OAuth tokens in the sensitive `litellm-chatgpt-auth` volume.
 - Keep the master key in the administrative boundary; never place it in n8n or Dify.
 - Issue separate model-limited virtual keys for n8n and Dify.
 - Permit only declared clients on `litellm-clients`; isolate PostgreSQL on
   `litellm-backend` and optional model/telemetry services on `litellm-upstreams`.
-- Require a Cloudflare WAF Managed Challenge for the Admin UI and restrict Traefik
-  ingress to current Cloudflare edge CIDRs. Deny declared inference, model discovery,
-  OpenAPI/docs, health, and public metadata paths at that ingress.
-- Treat LiteLLM login as the user identity boundary, the WAF challenge as automated-abuse
-  reduction, and the Traefik CIDR allowlist as the direct-origin boundary.
-- Keep full administrative access on host loopback for SSH-tunnel recovery.
+- Disable LiteLLM Traefik discovery and bind its host port only to `127.0.0.1`.
+- Treat SSH access as the remote network boundary and LiteLLM login as the user identity boundary.
+- Keep administrative access on host loopback through an SSH tunnel.
+- After verifying a password-backed `proxy_admin`, disable shared environment-credential
+  UI login while retaining the master key for API administration and recovery.
 - Set `litellm_settings.turn_off_message_logging: true` before client traffic. Verify
   with sentinel content that prompts and responses are absent from logs and traces.
 - Never log credentials or key values.

@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Authenticated LiteLLM HTTPS routing through Traefik with a configurable subdomain
+- Host-loopback LiteLLM Admin UI access for SSH-tunnel administration
 - Product-level Compose profiles, initial preset closures, and resolved-service validation
 - Internal LiteLLM Proxy `v1.103.2` with a dedicated PostgreSQL database and secure defaults
 - Measured idle resource baseline, component metrics, and evidence-qualified VPS sizing
@@ -48,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Restricted LiteLLM administration to its host-loopback SSH tunnel and disabled public
+  Traefik discovery
+- Added persistent ChatGPT Subscription OAuth storage and documented device-flow
+  authentication before LiteLLM model creation
+- Added a bootstrap-safe switch for disabling LiteLLM shared environment-credential login
+  after a password-backed administrator is verified
 - Added a selectable Cloudflare DNS-01 overlay while retaining HTTP-01 as the default
   Traefik certificate mode
 - Isolated LiteLLM database, clients, and optional upstreams on dedicated internal
