@@ -18,6 +18,7 @@
 - Server-side repo path is expected to be `~/ai-lab-server-setup` for the `lab` user.
 - Typical live checks: `ssh lab@<server> 'cd ~/ai-lab-server-setup && docker compose ps'`, targeted `docker compose logs --tail=50 <service>`, and `~/ai-lab-server-setup/scripts/validate.sh` or `lab-validate`.
 - For a support bundle, run `bash ~/ai-lab-server-setup/scripts/collect-diagnostics.sh`; it redacts common secrets, but still review before sharing.
+- For an explicitly approved, small reversible runtime fix, prefer diagnosing and testing the smallest change on the server first: record the baseline, back up the affected configuration outside Git, change only the affected service, and check the working behavior and security boundaries. Roll back if checks fail. Once verified, make the matching repository change and run the required checks; reconcile server drift at the next rollout. Do not use this path for secret rotation, data migrations, or destructive changes.
 
 ## Safety Rules
 
@@ -36,6 +37,7 @@
 - Ollama is container-only and guarded by the `local-model` Compose profile; the default cloud-model stack must not start it.
 - OpenClaw publishes its Gateway only on host loopback port `18789`; access it through an SSH tunnel and never mount the Docker socket without an explicit sandbox design review.
 - Optional `ffmpeg-worker` mounts `/home/lab/client-conversation-analyzer-data` and limits file access through `N8N_RESTRICT_FILE_ACCESS_TO=/data/cca`.
+- LiteLLM supports ChatGPT subscriptions through the `chatgpt/` OAuth device flow. Authenticate interactively before adding the model, never relay device codes through chat, and persist `CHATGPT_TOKEN_DIR` in the sensitive `litellm-chatgpt-auth` volume.
 
 ## Session Handoff
 

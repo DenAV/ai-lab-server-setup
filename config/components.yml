@@ -271,7 +271,14 @@ components:
         read_only: true
         backup: repository
         sensitive: false
-    routes: ["https://${LITELLM_SUBDOMAIN}.${DOMAIN}"]
+      - type: volume
+        compose_file: docker-compose.yml
+        source: litellm-chatgpt-auth
+        target: /var/lib/litellm/chatgpt
+        read_only: false
+        backup: required
+        sensitive: true
+    routes: ["http://127.0.0.1:4000"]
     secrets:
       - LITELLM_DB_PASSWORD
       - LITELLM_MASTER_KEY
@@ -282,7 +289,7 @@ components:
       memory_mib_max: null
       cpu_percent_peak: null
     host_prerequisites:
-      required: [public-dns]
+      required: []
       conditional: {}
 
   n8n:
