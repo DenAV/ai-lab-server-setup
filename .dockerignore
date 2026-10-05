@@ -3,4 +3,4 @@
 !Dockerfile.litellm
 !scripts/
 scripts/*
-!scripts/patch-litellm-health-check.py
+!scripts/patch-litellm-chatgpt.py

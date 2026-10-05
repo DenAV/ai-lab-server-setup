@@ -36,16 +36,17 @@ n8n's OpenAI credential supports a custom Base URL and model discovery through
 ChatGPT Subscription configuration disables **Use Responses API**, keeps Response Format
 at text, and configures each additional Basic LLM Chain chat message with **Type Name or
 ID: User**, **Message Type: Text**, and the prompt in **Message**, instead of using System
-Messages. n8n exports this setting as `HumanMessagePromptTemplate`. On 2026-10-05, a
-two-stage n8n `2.40.7` generation and editing chain completed with
-`chatgpt/gpt-5.6-terra` using that configuration.
+Messages. n8n exports this setting as `HumanMessagePromptTemplate`.
 
-This result approves only the tested plain-text pattern. LiteLLM `v1.103.2` with the same
-route returned an empty final output item for `json_schema`, `json_object`, and JSON-only
-requests, so n8n Structured Output Parser remains unapproved. Direct n8n OpenAI Chat
-Model Responses mode also remains deferred while its System Message mapping is
-incompatible with the provider. The Embeddings OpenAI node explicitly supports a
-self-hosted Base URL.
+An initial two-stage generation and editing run completed, but the unpatched LiteLLM
+bridge later reproduced `Unknown items in responses API response: []`. The derivative
+image recovers `response.output_item.done` data when the final streaming response has an
+empty output list. Three equivalent long plain-text requests passed after the patch.
+End-to-end n8n acceptance still requires a repeated workflow run. `json_schema` did not
+consistently return directly parseable JSON, so Structured Output Parser remains
+unapproved. Direct n8n OpenAI Chat Model Responses mode also remains deferred while its
+System Message mapping is incompatible with the provider. The Embeddings OpenAI node
+explicitly supports a self-hosted Base URL.
 
 Dify uses OpenAI API Compatible plugin `0.0.68`, reviewed at commit `f6b4a6a`. Configure
 the LLM base as `http://litellm:4000/v1`. For text embeddings, configure

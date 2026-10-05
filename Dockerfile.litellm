@@ -1,5 +1,5 @@
 ARG LITELLM_VERSION=v1.103.2
 FROM ghcr.io/berriai/litellm:${LITELLM_VERSION}
 
-COPY scripts/patch-litellm-health-check.py /tmp/patch-litellm-health-check.py
-RUN python3 /tmp/patch-litellm-health-check.py && rm /tmp/patch-litellm-health-check.py
+COPY scripts/patch-litellm-chatgpt.py /tmp/patch-litellm-chatgpt.py
+RUN python3 /tmp/patch-litellm-chatgpt.py && rm /tmp/patch-litellm-chatgpt.py
