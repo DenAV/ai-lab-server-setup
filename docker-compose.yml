@@ -46,6 +46,7 @@ volumes:
   dify-plugin-data:
   demo-db-data:
   litellm-db-data:
+  litellm-chatgpt-auth:
 
 services:
   # ===========================================================================
@@ -316,7 +317,12 @@ services:
 
   litellm:
     profiles: ["litellm"]
-    image: "ghcr.io/berriai/litellm:${LITELLM_VERSION:-v1.103.2}"
+    build:
+      context: .
+      dockerfile: Dockerfile.litellm
+      args:
+        LITELLM_VERSION: ${LITELLM_VERSION:-v1.103.2}
+    image: "ai-lab-litellm:${LITELLM_VERSION:-v1.103.2}-healthfix"
     container_name: litellm
     restart: unless-stopped
     command: ["--config=/app/config.yaml"]
@@ -327,12 +333,15 @@ services:
       - DATABASE_URL=postgresql://litellm:${LITELLM_DB_PASSWORD}@litellm-db:5432/litellm
       - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
       - LITELLM_SALT_KEY=${LITELLM_SALT_KEY}
+      - LITELLM_DISABLE_ENV_CREDENTIAL_LOGIN=${LITELLM_DISABLE_ENV_CREDENTIAL_LOGIN:-false}
       - LITELLM_TRUSTED_PROXY_RANGES=172.30.0.0/29,${TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS:-127.0.0.1/32}
       - LITELLM_MCP_XFF_NUM_TRUSTED_HOPS=${LITELLM_MCP_XFF_NUM_TRUSTED_HOPS:-1}
+      - CHATGPT_TOKEN_DIR=/var/lib/litellm/chatgpt
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
       - "./config/litellm-config.yml:/app/config.yaml:ro"
+      - "litellm-chatgpt-auth:/var/lib/litellm/chatgpt"
     networks:
       litellm-backend: {}
       litellm-clients: {}
@@ -341,7 +350,7 @@ services:
       traefik-public:
         gw_priority: 1
     labels:
-      traefik.enable: "true"
+      traefik.enable: "false"
       traefik.docker.network: litellm-ingress
       traefik.http.routers.litellm-ui.rule: "Host(`${LITELLM_SUBDOMAIN}.${DOMAIN}`)"
       traefik.http.routers.litellm-ui.entrypoints: websecure

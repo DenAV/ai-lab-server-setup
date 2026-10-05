@@ -32,9 +32,20 @@ client, payload, model, or provider compatibility.
 | OpenClaw `2026.9.3` | Native subscription/provider routes remain unchanged | none | LiteLLM custom provider |
 
 n8n's OpenAI credential supports a custom Base URL and model discovery through
-`/models`. The current OpenAI Chat Model defaults to the Responses API, so every LiteLLM
-configuration must disable **Use Responses API** until that path has its own acceptance
-tests. The Embeddings OpenAI node explicitly supports a self-hosted Base URL.
+`/models`. The current OpenAI Chat Model defaults to the Responses API, so the tested
+ChatGPT Subscription configuration disables **Use Responses API**, keeps Response Format
+at text, and configures each additional Basic LLM Chain chat message with **Type Name or
+ID: User**, **Message Type: Text**, and the prompt in **Message**, instead of using System
+Messages. n8n exports this setting as `HumanMessagePromptTemplate`. On 2026-10-05, a
+two-stage n8n `2.40.7` generation and editing chain completed with
+`chatgpt/gpt-5.6-terra` using that configuration.
+
+This result approves only the tested plain-text pattern. LiteLLM `v1.103.2` with the same
+route returned an empty final output item for `json_schema`, `json_object`, and JSON-only
+requests, so n8n Structured Output Parser remains unapproved. Direct n8n OpenAI Chat
+Model Responses mode also remains deferred while its System Message mapping is
+incompatible with the provider. The Embeddings OpenAI node explicitly supports a
+self-hosted Base URL.
 
 Dify uses OpenAI API Compatible plugin `0.0.68`, reviewed at commit `f6b4a6a`. Configure
 the LLM base as `http://litellm:4000/v1`. For text embeddings, configure
@@ -50,6 +61,7 @@ API-key provider credential and must not be routed through LiteLLM.
 | Provider | Chat eligibility | Embedding eligibility | Conditions |
 |----------|------------------|-----------------------|------------|
 | OpenAI API | eligible | eligible | API key billing; test each alias |
+| ChatGPT Subscription | conditional | excluded | Native model mode is `responses`; Chat Completions is bridged; strict JSON is not approved on the tested route |
 | Anthropic API | eligible | excluded | Test normalized parameters and tools per model |
 | Google Gemini API | eligible | eligible | Configure distinct chat and embedding models |
 | Ollama | eligible | conditional | Requires `local-model`; capabilities vary by model |
@@ -61,19 +73,19 @@ pass the acceptance tests in `config/litellm-contracts.yml` before selection.
 
 ## Credential Boundary
 
-- Add upstream provider credentials only through the operator-restricted or loopback
-  LiteLLM Admin UI;
+- Add upstream provider credentials only through the SSH-tunneled loopback LiteLLM Admin UI;
   retain them encrypted in its dedicated database with `LITELLM_SALT_KEY`.
+- Authenticate the `chatgpt/` subscription provider interactively before model creation
+  and persist its OAuth tokens in the sensitive `litellm-chatgpt-auth` volume.
 - Keep the master key in the administrative boundary; never place it in n8n or Dify.
 - Issue separate model-limited virtual keys for n8n and Dify.
 - Permit only declared clients on `litellm-clients`; isolate PostgreSQL on
   `litellm-backend` and optional model/telemetry services on `litellm-upstreams`.
-- Require a Cloudflare WAF Managed Challenge for the Admin UI and restrict Traefik
-  ingress to current Cloudflare edge CIDRs. Deny declared inference, model discovery,
-  OpenAPI/docs, health, and public metadata paths at that ingress.
-- Treat LiteLLM login as the user identity boundary, the WAF challenge as automated-abuse
-  reduction, and the Traefik CIDR allowlist as the direct-origin boundary.
-- Keep full administrative access on host loopback for SSH-tunnel recovery.
+- Disable LiteLLM Traefik discovery and bind its host port only to `127.0.0.1`.
+- Treat SSH access as the remote network boundary and LiteLLM login as the user identity boundary.
+- Keep administrative access on host loopback through an SSH tunnel.
+- After verifying a password-backed `proxy_admin`, disable shared environment-credential
+  UI login while retaining the master key for API administration and recovery.
 - Set `litellm_settings.turn_off_message_logging: true` before client traffic. Verify
   with sentinel content that prompts and responses are absent from logs and traces.
 - Never log credentials or key values.

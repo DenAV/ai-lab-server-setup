@@ -6,6 +6,7 @@ litellm_settings:
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
+  disable_env_credential_login: os.environ/LITELLM_DISABLE_ENV_CREDENTIAL_LOGIN
   store_model_in_db: true
   database_connection_pool_limit: 5
   trusted_proxy_ranges: os.environ/LITELLM_TRUSTED_PROXY_RANGES

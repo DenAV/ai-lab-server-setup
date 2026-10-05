@@ -53,8 +53,7 @@ Evidence: `config/components.yml`, `config/litellm-contracts.yml`,
 - [x] Add LiteLLM Proxy and its dedicated database.
 - [x] Define `n8n-cloud`, `dify-cloud`, and `openclaw` presets.
 - [x] Validate resolved Compose service closures in CI.
-- [x] Isolate LiteLLM networks, validate forwarded client IPs, and protect its public UI
-  with Cloudflare WAF and origin controls.
+- [x] Isolate LiteLLM networks and keep its per-user Admin UI on host loopback for SSH-tunnel access.
 - [x] Support selectable HTTP-01 and Cloudflare DNS-01 certificate modes.
 - [ ] Smoke-test each preset on a clean host without unrelated services.
 - [ ] Execute LiteLLM provider, client, key-isolation, persistence, and redaction tests.

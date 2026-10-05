@@ -265,11 +265,16 @@ def main() -> int:
         "${TRAEFIK_FORWARDED_HEADERS_TRUSTED_IPS:-127.0.0.1/32}",
         "LITELLM_MCP_XFF_NUM_TRUSTED_HOPS="
         "${LITELLM_MCP_XFF_NUM_TRUSTED_HOPS:-1}",
+        "CHATGPT_TOKEN_DIR=/var/lib/litellm/chatgpt",
+        "LITELLM_DISABLE_ENV_CREDENTIAL_LOGIN="
+        "${LITELLM_DISABLE_ENV_CREDENTIAL_LOGIN:-false}",
     }
     if not required_litellm_environment.issubset(set(litellm_environment)):
         errors.append("LiteLLM must receive trusted proxy ranges and the MCP trusted hop count")
 
     labels = service_labels(services.get("litellm") or {})
+    if labels.get("traefik.enable") != "false":
+        errors.append("LiteLLM Traefik discovery must remain disabled for tunnel-only access")
     if labels.get("traefik.docker.network") != "litellm-ingress":
         errors.append("LiteLLM Traefik routing must use the isolated litellm-ingress network")
     ui_middlewares = labels.get("traefik.http.routers.litellm-ui.middlewares", "")
@@ -308,6 +313,10 @@ def main() -> int:
     else:
         if general_settings.get("master_key") != "os.environ/LITELLM_MASTER_KEY":
             errors.append("litellm-config master key must load from the environment")
+        if general_settings.get("disable_env_credential_login") != (
+            "os.environ/LITELLM_DISABLE_ENV_CREDENTIAL_LOGIN"
+        ):
+            errors.append("litellm-config env credential login gate must load from the environment")
         if general_settings.get("store_model_in_db") is not True:
             errors.append("litellm-config must enable database-backed GUI model management")
         if general_settings.get("trusted_proxy_ranges") != "os.environ/LITELLM_TRUSTED_PROXY_RANGES":
