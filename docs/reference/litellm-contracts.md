@@ -32,17 +32,20 @@ client, payload, model, or provider compatibility.
 | OpenClaw `2026.9.3` | Native subscription/provider routes remain unchanged | none | LiteLLM custom provider |
 
 n8n's OpenAI credential supports a custom Base URL and model discovery through
-`/models`. The current OpenAI Chat Model defaults to the Responses API, so every LiteLLM
-configuration must disable **Use Responses API** until that path has its own acceptance
-tests. Keep **Response Format** set to text for ChatGPT Subscription models. LiteLLM
-`v1.103.2` with the tested `chatgpt/gpt-5.6-terra` route returned an empty final output
-item for `json_schema`, `json_object`, and JSON-only requests, so n8n Structured Output
-Parser is not approved for that route. The Embeddings OpenAI node explicitly supports a
-self-hosted Base URL.
+`/models`. The current OpenAI Chat Model defaults to the Responses API, so the tested
+ChatGPT Subscription configuration disables **Use Responses API**, keeps Response Format
+at text, and configures each additional Basic LLM Chain chat message with **Type Name or
+ID: User**, **Message Type: Text**, and the prompt in **Message**, instead of using System
+Messages. n8n exports this setting as `HumanMessagePromptTemplate`. On 2026-10-05, a
+two-stage n8n `2.40.7` generation and editing chain completed with
+`chatgpt/gpt-5.6-terra` using that configuration.
 
-On 2026-10-05 an operator reported that the n8n-to-LiteLLM URL worked after URL guidance.
-The exact node and payload were not recorded, so this does not complete the deferred n8n
-OpenAI Chat Model Responses acceptance tests or the strict-JSON contract.
+This result approves only the tested plain-text pattern. LiteLLM `v1.103.2` with the same
+route returned an empty final output item for `json_schema`, `json_object`, and JSON-only
+requests, so n8n Structured Output Parser remains unapproved. Direct n8n OpenAI Chat
+Model Responses mode also remains deferred while its System Message mapping is
+incompatible with the provider. The Embeddings OpenAI node explicitly supports a
+self-hosted Base URL.
 
 Dify uses OpenAI API Compatible plugin `0.0.68`, reviewed at commit `f6b4a6a`. Configure
 the LLM base as `http://litellm:4000/v1`. For text embeddings, configure

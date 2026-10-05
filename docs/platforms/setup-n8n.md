@@ -50,11 +50,24 @@ virtual key in n8n, not the gateway master key.
 | HTTP Request node calling Responses directly | `http://litellm:4000/v1/responses` |
 
 The OpenAI Chat Model adds its own API path to the Base URL; do not put `/responses`
-in that credential field. For ChatGPT Subscription models, keep **Use Responses API**
-disabled in the OpenAI Chat Model while it sends system messages. An operator reported
-that the n8n-to-LiteLLM URL worked on 2026-10-05; the exact node and request payload were
-not recorded. This does not establish compatibility with every n8n LangChain node or
-structured-JSON output.
+in that credential field.
+
+The following n8n `2.40.7` plain-text configuration was verified with
+`chatgpt/gpt-5.6-terra` on 2026-10-05:
+
+- keep **Use Responses API** disabled in the OpenAI Chat Model;
+- keep Response Format at its text default;
+- under **Chat Messages (if Using a Chat Model)** in each Basic LLM Chain, set
+  **Type Name or ID** to **User**, **Message Type** to **Text**, and **Message** to the
+  prompt text; n8n represents this as `HumanMessagePromptTemplate` in exported workflow
+  JSON;
+- do not send a System Message because the ChatGPT Subscription backend rejects the
+  `system` role;
+- keep downstream validation for any model output that drives an automated action.
+
+A two-stage Basic LLM Chain that generated and then edited a Russian plain-text Telegram
+post completed with this configuration. This evidence does not establish compatibility
+with every n8n LangChain node or structured-JSON output.
 
 See [LiteLLM Setup](setup-litellm.md) for model-mode and connection-test details.
 

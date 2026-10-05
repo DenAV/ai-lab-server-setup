@@ -58,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wildcard fallback, and the current strict-JSON compatibility limitation
 - Built a pinned LiteLLM derivative that sends a valid list of user messages in the
   ChatGPT Subscription Responses connection test
+- Recorded the verified n8n ChatGPT Subscription plain-text pattern using Chat
+  Completions and Human Message templates instead of System Messages
 - Added a selectable Cloudflare DNS-01 overlay while retaining HTTP-01 as the default
   Traefik certificate mode
 - Isolated LiteLLM database, clients, and optional upstreams on dedicated internal
