@@ -1,2 +1,6 @@
 *
 !Dockerfile.openclaw-sandbox
+!Dockerfile.litellm
+!scripts/
+scripts/*
+!scripts/patch-litellm-health-check.py

@@ -34,7 +34,15 @@ client, payload, model, or provider compatibility.
 n8n's OpenAI credential supports a custom Base URL and model discovery through
 `/models`. The current OpenAI Chat Model defaults to the Responses API, so every LiteLLM
 configuration must disable **Use Responses API** until that path has its own acceptance
-tests. The Embeddings OpenAI node explicitly supports a self-hosted Base URL.
+tests. Keep **Response Format** set to text for ChatGPT Subscription models. LiteLLM
+`v1.103.2` with the tested `chatgpt/gpt-5.6-terra` route returned an empty final output
+item for `json_schema`, `json_object`, and JSON-only requests, so n8n Structured Output
+Parser is not approved for that route. The Embeddings OpenAI node explicitly supports a
+self-hosted Base URL.
+
+On 2026-10-05 an operator reported that the n8n-to-LiteLLM URL worked after URL guidance.
+The exact node and payload were not recorded, so this does not complete the deferred n8n
+OpenAI Chat Model Responses acceptance tests or the strict-JSON contract.
 
 Dify uses OpenAI API Compatible plugin `0.0.68`, reviewed at commit `f6b4a6a`. Configure
 the LLM base as `http://litellm:4000/v1`. For text embeddings, configure
@@ -50,6 +58,7 @@ API-key provider credential and must not be routed through LiteLLM.
 | Provider | Chat eligibility | Embedding eligibility | Conditions |
 |----------|------------------|-----------------------|------------|
 | OpenAI API | eligible | eligible | API key billing; test each alias |
+| ChatGPT Subscription | conditional | excluded | Native model mode is `responses`; Chat Completions is bridged; strict JSON is not approved on the tested route |
 | Anthropic API | eligible | excluded | Test normalized parameters and tools per model |
 | Google Gemini API | eligible | eligible | Configure distinct chat and embedding models |
 | Ollama | eligible | conditional | Requires `local-model`; capabilities vary by model |

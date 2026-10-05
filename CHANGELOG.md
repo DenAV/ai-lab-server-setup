@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   authentication before LiteLLM model creation
 - Added a bootstrap-safe switch for disabling LiteLLM shared environment-credential login
   after a password-backed administrator is verified
+- Documented the native `responses` mode for ChatGPT Subscription models, the Admin UI
+  wildcard fallback, and the current strict-JSON compatibility limitation
+- Built a pinned LiteLLM derivative that sends a valid list of user messages in the
+  ChatGPT Subscription Responses connection test
 - Added a selectable Cloudflare DNS-01 overlay while retaining HTTP-01 as the default
   Traefik certificate mode
 - Isolated LiteLLM database, clients, and optional upstreams on dedicated internal

@@ -317,7 +317,12 @@ services:
 
   litellm:
     profiles: ["litellm"]
-    image: "ghcr.io/berriai/litellm:${LITELLM_VERSION:-v1.103.2}"
+    build:
+      context: .
+      dockerfile: Dockerfile.litellm
+      args:
+        LITELLM_VERSION: ${LITELLM_VERSION:-v1.103.2}
+    image: "ai-lab-litellm:${LITELLM_VERSION:-v1.103.2}-healthfix"
     container_name: litellm
     restart: unless-stopped
     command: ["--config=/app/config.yaml"]

@@ -1,7 +1,9 @@
 # LiteLLM Setup
 
 LiteLLM is an internal model gateway for compatible n8n and Dify clients. The `litellm`
-profile starts LiteLLM `v1.103.2` and a dedicated PostgreSQL database. The Admin UI is
+profile builds a small derivative of LiteLLM `v1.103.2` and starts a dedicated PostgreSQL
+database. The derivative fixes the Responses **Test Connection** probe's input shape;
+the build fails if the upstream probe changes. The Admin UI is
 published only on host loopback port 4000 and is not routed through Traefik. PostgreSQL
 and model APIs remain private.
 
@@ -64,6 +66,54 @@ Open the URL printed by LiteLLM and enter the device code yourself. Never paste 
 into chat or logs shared with others. The token and refresh token are stored in the
 `litellm-chatgpt-auth` volume through `CHATGPT_TOKEN_DIR`; include that sensitive volume
 in backups. After authentication completes, add the `chatgpt/...` model in the Admin UI.
+
+### Add a ChatGPT Subscription model
+
+ChatGPT Subscription is native to the Responses API. Its model mode is therefore
+`responses`, even when an n8n client calls `/v1/chat/completions`; LiteLLM bridges that
+request to the provider's Responses API.
+
+Use these values under **Models + Endpoints** > **Add Model**:
+
+| Field | Value |
+|-------|-------|
+| Provider | **ChatGPT Subscription** |
+| LiteLLM Model Name(s) | Select an explicit `chatgpt/<model>` when possible, or **All CHATGPT Models (Wildcard)** for discovery |
+| Mode for an explicit model | `responses` |
+| Mode for the wildcard in LiteLLM `v1.103.2` | Leave it empty because this Admin UI does not expose `responses` in the list |
+
+Do not substitute **Completion - `/completions`**, **Embedding - `/embeddings`**, or
+another unrelated mode. Do not select **Chat - `/chat/completions`** merely because n8n
+uses that client endpoint: the field describes the provider's native model mode, not the
+endpoint used by the client. The wildcard with an empty Mode lets LiteLLM apply the
+ChatGPT provider default. For a configuration-managed explicit model, the equivalent is:
+
+```yaml
+model_list:
+  - model_name: chatgpt/<model>
+    model_info:
+      mode: responses
+    litellm_params:
+      model: chatgpt/<model>
+```
+
+See the upstream [ChatGPT Subscription provider documentation](https://docs.litellm.ai/docs/providers/chatgpt)
+for the native and bridged endpoints.
+
+After adding the wildcard, use **Test Connection** in the Admin UI. The derivative image
+passes a list of user messages to the Responses provider, as required by its backend.
+The test should report success when authentication and connectivity work. If the server
+still runs the original `ghcr.io/berriai/litellm` image, build and recreate only LiteLLM
+with `docker compose up -d --build --no-deps litellm` after backing up its database and
+OAuth volume. The previous image and database backup provide the rollback path. A
+successful connection test does not validate response content or n8n structured output.
+
+LiteLLM `v1.103.2` and the tested `chatgpt/gpt-5.6-terra` route are not a compatible
+choice for n8n strict-JSON chains. Requests using `json_schema`, `json_object`, or a
+JSON-only prompt can complete upstream with no final output item and fail in LiteLLM with
+`Unknown items in responses API response: []`. Use a separately validated API-key model
+for workflows that require n8n Structured Output Parser. Do not remove downstream schema
+validation or automatic-application safeguards to work around this provider limitation.
 
 n8n and Dify must use `http://litellm:4000/v1` on the private `litellm-clients` network.
 

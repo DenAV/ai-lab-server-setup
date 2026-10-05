@@ -39,6 +39,25 @@ openssl rand -base64 16  # for N8N_BASIC_AUTH_PASSWORD
 2. Create your account (first-time setup)
 3. Start building workflows
 
+## Connecting to LiteLLM
+
+n8n and LiteLLM share the private `litellm-clients` network. Use a dedicated LiteLLM
+virtual key in n8n, not the gateway master key.
+
+| n8n client | URL |
+|------------|-----|
+| OpenAI credential / OpenAI Chat Model Base URL | `http://litellm:4000/v1` |
+| HTTP Request node calling Responses directly | `http://litellm:4000/v1/responses` |
+
+The OpenAI Chat Model adds its own API path to the Base URL; do not put `/responses`
+in that credential field. For ChatGPT Subscription models, keep **Use Responses API**
+disabled in the OpenAI Chat Model while it sends system messages. An operator reported
+that the n8n-to-LiteLLM URL worked on 2026-10-05; the exact node and request payload were
+not recorded. This does not establish compatibility with every n8n LangChain node or
+structured-JSON output.
+
+See [LiteLLM Setup](setup-litellm.md) for model-mode and connection-test details.
+
 ## Connecting to Ollama
 
 1. Add an **HTTP Request** node
