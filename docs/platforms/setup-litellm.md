@@ -2,8 +2,9 @@
 
 LiteLLM is an internal model gateway for compatible n8n and Dify clients. The `litellm`
 profile builds a small derivative of LiteLLM `v1.103.2` and starts a dedicated PostgreSQL
-database. The derivative fixes the Responses **Test Connection** probe's input shape;
-the build fails if the upstream probe changes. The Admin UI is
+database. The derivative fixes the Responses **Test Connection** input shape and recovers
+completed output items that the ChatGPT streaming backend omits from its final response;
+the build fails if either upstream code path changes. The Admin UI is
 published only on host loopback port 4000 and is not routed through Traefik. PostgreSQL
 and model APIs remain private.
 
@@ -108,12 +109,12 @@ with `docker compose up -d --build --no-deps litellm` after backing up its datab
 OAuth volume. The previous image and database backup provide the rollback path. A
 successful connection test does not validate response content or n8n structured output.
 
-LiteLLM `v1.103.2` and the tested `chatgpt/gpt-5.6-terra` route are not a compatible
-choice for n8n strict-JSON chains. Requests using `json_schema`, `json_object`, or a
-JSON-only prompt can complete upstream with no final output item and fail in LiteLLM with
-`Unknown items in responses API response: []`. Use a separately validated API-key model
-for workflows that require n8n Structured Output Parser. Do not remove downstream schema
-validation or automatic-application safeguards to work around this provider limitation.
+The derivative also repairs plain-text Chat Completions requests that otherwise fail with
+`Unknown items in responses API response: []`. The bridge regression test completed three
+long non-streaming requests and one `json_object` request. `json_schema` did not
+consistently produce directly parseable JSON, so n8n Structured Output Parser remains
+unapproved for this route. Do not remove downstream schema validation or
+automatic-application safeguards to work around this provider limitation.
 
 n8n and Dify must use `http://litellm:4000/v1` on the private `litellm-clients` network.
 
