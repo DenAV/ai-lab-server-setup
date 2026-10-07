@@ -68,9 +68,10 @@ Use the following n8n `2.40.7` plain-text configuration with
 An initial two-stage Basic LLM Chain run completed with this configuration, but the
 unpatched Chat Completions bridge later reproduced an empty-output failure. The derivative
 LiteLLM image now recovers the completed streaming output item and passed three equivalent
-long-request regression checks. Repeat the two-stage n8n execution after deployment before
-treating this path as accepted. This evidence does not establish compatibility with every
-n8n LangChain node or structured-JSON output.
+long-request regression checks. After deployment, the operator repeated both Generate
+Russian Post and the complete generation-and-editing workflow successfully. This accepts
+the documented plain-text path, but does not establish compatibility with every n8n
+LangChain node or structured-JSON output.
 
 See [LiteLLM Setup](setup-litellm.md) for model-mode and connection-test details.
 
