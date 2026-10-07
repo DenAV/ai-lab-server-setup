@@ -52,8 +52,8 @@ virtual key in n8n, not the gateway master key.
 The OpenAI Chat Model adds its own API path to the Base URL; do not put `/responses`
 in that credential field.
 
-The following n8n `2.40.7` plain-text configuration was verified with
-`chatgpt/gpt-5.6-terra` on 2026-10-05:
+Use the following n8n `2.40.7` plain-text configuration with
+`chatgpt/gpt-5.6-terra`:
 
 - keep **Use Responses API** disabled in the OpenAI Chat Model;
 - keep Response Format at its text default;
@@ -65,9 +65,13 @@ The following n8n `2.40.7` plain-text configuration was verified with
   `system` role;
 - keep downstream validation for any model output that drives an automated action.
 
-A two-stage Basic LLM Chain that generated and then edited a Russian plain-text Telegram
-post completed with this configuration. This evidence does not establish compatibility
-with every n8n LangChain node or structured-JSON output.
+An initial two-stage Basic LLM Chain run completed with this configuration, but the
+unpatched Chat Completions bridge later reproduced an empty-output failure. The derivative
+LiteLLM image now recovers the completed streaming output item and passed three equivalent
+long-request regression checks. After deployment, the operator repeated both Generate
+Russian Post and the complete generation-and-editing workflow successfully. This accepts
+the documented plain-text path, but does not establish compatibility with every n8n
+LangChain node or structured-JSON output.
 
 See [LiteLLM Setup](setup-litellm.md) for model-mode and connection-test details.
 
