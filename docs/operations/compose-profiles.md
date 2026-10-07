@@ -43,6 +43,7 @@ containers automatically; reconciliation and saved selection state arrive in Pha
 | Ollama | `local-model` | Explicit opt-in retained from ADR-0002 |
 | OpenClaw | `openclaw` | Loopback-only Gateway |
 | Qdrant | `qdrant` | Required by the Dify preset |
+| Yopass | `yopass` | Public secret sharing with an internal Redis dependency |
 
 For workers, include the overlay and both dependency profiles:
 

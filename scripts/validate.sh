@@ -122,6 +122,7 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   profile_enabled "litellm" && CONTAINERS="${CONTAINERS} litellm litellm-db"
   profile_enabled "local-model" && CONTAINERS="${CONTAINERS} ollama-compose"
   profile_enabled "ffmpeg-worker" && CONTAINERS="${CONTAINERS} ffmpeg-worker"
+  profile_enabled "yopass" && CONTAINERS="${CONTAINERS} yopass yopass-redis"
   if profile_enabled "dify"; then
     CONTAINERS="${CONTAINERS} dify-api dify-worker dify-beat dify-web dify-nginx"
     CONTAINERS="${CONTAINERS} dify-db dify-redis dify-sandbox dify-plugin-daemon"
@@ -151,6 +152,9 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   fi
   if profile_enabled "local-model"; then
     check "Ollama API"        "docker exec ollama-compose ollama list"
+  fi
+  if profile_enabled "yopass"; then
+    check "Yopass API"        "docker exec yopass /yopass-server --health-check"
   fi
 fi
 

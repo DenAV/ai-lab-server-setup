@@ -15,6 +15,7 @@ Detailed setup and configuration guides for each component in the AI Lab stack.
 | [n8n](platforms/setup-n8n.md) | Workflow automation | `n8n.<domain>` |
 | [Langfuse](platforms/setup-langfuse.md) | LLM observability | `trace.<domain>` |
 | [FFmpeg Worker](platforms/setup-ffmpeg-worker.md) | Internal media processing worker | internal |
+| [Yopass](platforms/setup-yopass.md) | End-to-end encrypted secret sharing | `yopass.<domain>` |
 
 ## Integrations
 

@@ -476,3 +476,33 @@ components:
         - public-dns
       conditional:
         compose.traefik-cloudflare.yml: [cloudflare-dns-api-token]
+
+  yopass:
+    description: End-to-end encrypted secret sharing with persistent Redis storage
+    required: false
+    services: [yopass, yopass-redis]
+    compose_files: [docker-compose.yml]
+    profile: yopass
+    dependencies:
+      required: []
+      optional: []
+    conflicts: []
+    networks: [traefik-public, yopass-backend]
+    storage:
+      - type: volume
+        compose_file: docker-compose.yml
+        source: yopass-redis-data
+        target: /data
+        read_only: false
+        backup: required
+        sensitive: true
+    routes: ["https://yopass.${DOMAIN}"]
+    secrets: []
+    health_checks: [yopass, yopass-redis]
+    resources:
+      status: unmeasured
+      memory_mib_max: null
+      cpu_percent_peak: null
+    host_prerequisites:
+      required: [public-dns]
+      conditional: {}

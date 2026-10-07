@@ -27,6 +27,9 @@ networks:
         - subnet: 172.30.0.0/29
   openclaw-net:
     driver: bridge
+  yopass-backend:
+    driver: bridge
+    internal: true
   traefik-public:
     name: traefik-public
     driver: bridge
@@ -47,6 +50,7 @@ volumes:
   demo-db-data:
   litellm-db-data:
   litellm-chatgpt-auth:
+  yopass-redis-data:
 
 services:
   # ===========================================================================
@@ -70,6 +74,68 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ===========================================================================
+  # Yopass — End-to-end encrypted secret sharing
+  # ===========================================================================
+  yopass-redis:
+    profiles: ["yopass"]
+    image: "redis:${YOPASS_REDIS_VERSION:-7.4.7-alpine}"
+    container_name: yopass-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--save", ""]
+    volumes:
+      - "yopass-redis-data:/data"
+    networks:
+      - yopass-backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+
+  yopass:
+    profiles: ["yopass"]
+    image: "jhaals/yopass:${YOPASS_VERSION:-14.10.0}"
+    container_name: yopass
+    restart: unless-stopped
+    environment:
+      - DATABASE=redis
+      - REDIS=redis://yopass-redis:6379/0
+      - PORT=1337
+      - DEFAULT_EXPIRY=1d
+      - CORS_ALLOW_ORIGIN=https://yopass.${DOMAIN}
+    depends_on:
+      yopass-redis:
+        condition: service_healthy
+    networks:
+      - yopass-backend
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      - "traefik.http.routers.yopass.rule=Host(`yopass.${DOMAIN}`)"
+      - "traefik.http.routers.yopass.entrypoints=websecure"
+      - "traefik.http.routers.yopass.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.yopass.middlewares=secure-headers@docker"
+      - "traefik.http.services.yopass.loadbalancer.server.port=1337"
+    healthcheck:
+      test: ["CMD", "/yopass-server", "--health-check"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
 
   # ===========================================================================
   # Traefik — Reverse Proxy with automatic TLS

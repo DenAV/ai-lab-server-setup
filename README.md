@@ -4,7 +4,7 @@ Universal provisioning scripts for AI/DevOps lab environments on **Ubuntu 24.04*
 
 One script turns a fresh server into a fully configured AI lab with Docker,
 Qdrant, Python venv, firewall, and SSH hardening. Optionally deploy a full platform
-stack — Dify, n8n, OpenClaw, LiteLLM, Langfuse, and Traefik — through selectable
+stack — Dify, n8n, OpenClaw, LiteLLM, Langfuse, Yopass, and Traefik — through selectable
 Docker Compose profiles.
 Works with any cloud provider or bare metal — not tied to a specific platform.
 
@@ -138,6 +138,7 @@ Services included:
 | Qdrant | internal | Vector database | [setup](docs/platforms/setup-qdrant.md) |
 | Langfuse | `trace.<domain>` | LLM observability | [setup](docs/platforms/setup-langfuse.md) |
 | Demo DB | internal | Shared PostgreSQL for demo projects | — |
+| Yopass | `yopass.<domain>` | End-to-end encrypted secret sharing | [setup](docs/platforms/setup-yopass.md) |
 
 Flowise was retired from this stack. See [ADR-0007](docs/adr/0007-retire-flowise.md)
 for the reason and the commit containing its former setup guide.

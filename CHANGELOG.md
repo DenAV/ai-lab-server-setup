@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Yopass `14.10.0` profile with HTTPS routing and isolated persistent Redis storage
 - Host-loopback LiteLLM Admin UI access for SSH-tunnel administration
 - Product-level Compose profiles, initial preset closures, and resolved-service validation
 - Internal LiteLLM Proxy `v1.103.2` with a dedicated PostgreSQL database and secure defaults
