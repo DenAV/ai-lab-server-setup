@@ -21,7 +21,7 @@ counts must match the roadmap in the same change.
 
 ## P1: Compose profile foundation
 
-**Status:** In progress — 8/10 tasks
+**Status:** In progress — 9/11 tasks
 
 - [x] **P1-01** Keep Traefik outside all optional profiles.
 - [x] **P1-02** Group n8n, Dify, OpenClaw, LiteLLM, Ollama, Qdrant, Langfuse, demo
@@ -37,6 +37,8 @@ counts must match the roadmap in the same change.
   SSH-tunnel administration; disable shared env-login after verifying a per-user admin.
 - [x] **P1-10** Support default HTTP-01 and optional Cloudflare DNS-01 certificate modes
   without opening upstream TCP 80 for DNS-01 deployments.
+- [x] **P1-11** Add a standalone Yopass profile with an isolated persistent Redis
+  dependency, HTTPS routing, and live health validation.
 - [ ] **P1-07** Smoke-test each preset on a clean host and confirm the running service
   closure, persistence, and restart behavior.
 - [ ] **P1-08** Execute the LiteLLM provider, n8n, Dify, virtual-key isolation,
