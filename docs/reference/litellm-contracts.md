@@ -42,11 +42,12 @@ An initial two-stage generation and editing run completed, but the unpatched Lit
 bridge later reproduced `Unknown items in responses API response: []`. The derivative
 image recovers `response.output_item.done` data when the final streaming response has an
 empty output list. Three equivalent long plain-text requests passed after the patch.
-End-to-end n8n acceptance still requires a repeated workflow run. `json_schema` did not
-consistently return directly parseable JSON, so Structured Output Parser remains
-unapproved. Direct n8n OpenAI Chat Model Responses mode also remains deferred while its
-System Message mapping is incompatible with the provider. The Embeddings OpenAI node
-explicitly supports a self-hosted Base URL.
+The operator then repeated the Generate Russian Post node and complete two-stage n8n
+workflow successfully. This accepts the documented plain-text Chat Completions pattern.
+`json_schema` did not consistently return directly parseable JSON, so Structured Output
+Parser remains unapproved. Direct n8n OpenAI Chat Model Responses mode also remains
+deferred while its System Message mapping is incompatible with the provider. The
+Embeddings OpenAI node explicitly supports a self-hosted Base URL.
 
 Dify uses OpenAI API Compatible plugin `0.0.68`, reviewed at commit `f6b4a6a`. Configure
 the LLM base as `http://litellm:4000/v1`. For text embeddings, configure
