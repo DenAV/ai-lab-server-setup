@@ -86,7 +86,7 @@ counts must match the roadmap in the same change.
 
 ## P4: Existing-host migration
 
-**Status:** In progress — 4/5 tasks
+**Status:** In progress — 5/6 tasks
 
 - [x] **P4-01** Detect running components, volumes, credentials, and host overrides.
 - [x] **P4-02** Generate a migration preview matching the current installation intent.
@@ -94,3 +94,5 @@ counts must match the roadmap in the same change.
 - [ ] **P4-04** Test clean-host and upgraded-host migration, rollback, and idempotency.
 - [x] **P4-05** Apply the constructor to the lab host and verify selected services,
   resource reduction, and the recovery artifact.
+- [x] **P4-06** Migrate the live OpenClaw Gateway and preserved state to the rootless
+  sandbox daemon and validate a Codex agent turn plus sandbox tool on 2026.9.9.

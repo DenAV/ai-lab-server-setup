@@ -103,7 +103,7 @@ N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
 # =============================================================================
 # OpenClaw
 # =============================================================================
-OPENCLAW_VERSION=2026.9.3
+OPENCLAW_VERSION=2026.9.9
 OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
 COMPOSE_PROFILES=
 OLLAMA_VERSION=0.34.0

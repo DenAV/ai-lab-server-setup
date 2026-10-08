@@ -1,0 +1,59 @@
+# Run this file alone with the rootless Docker daemon; do not combine it with docker-compose.yml.
+services:
+  openclaw:
+    image: openclaw-sandbox-client:2026.9.9-docker29.8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.openclaw-sandbox
+    container_name: openclaw
+    restart: unless-stopped
+    init: true
+    # Root inside the rootless user namespace maps to the daemon's unprivileged host user.
+    # It can access that user's Docker socket without granting host root privileges.
+    user: "0:0"
+    environment:
+      HOME: /home/node
+      OPENCLAW_HOME: /home/node
+      OPENCLAW_STATE_DIR: /home/node/.openclaw
+      OPENCLAW_CONFIG_PATH: /home/node/.openclaw/openclaw.json
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:?set in rootless env file}
+      OPENCLAW_DISABLE_BONJOUR: "1"
+      DOCKER_HOST: unix:///run/openclaw-sandbox/docker.sock
+      TZ: ${TIMEZONE:-UTC}
+    command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
+    volumes:
+      - type: bind
+        source: ${OPENCLAW_ROOTLESS_DATA_DIR:?set absolute path}/state
+        target: /home/node/.openclaw
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${OPENCLAW_ROOTLESS_DATA_DIR:?set absolute path}/ssh
+        target: /home/node/.ssh
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${OPENCLAW_OFFICE_DIR:-/srv/openclaw-office}
+        target: /srv/openclaw-office
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${OPENCLAW_ROOTLESS_SOCKET:?set absolute path}
+        target: /run/openclaw-sandbox/docker.sock
+        bind:
+          create_host_path: false
+    ports:
+      - "127.0.0.1:18789:18789"
+    cap_drop:
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "node", "dist/docker-healthcheck.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

@@ -1,18 +1,24 @@
 # OpenClaw
 
-For an existing dedicated rootless Docker deployment, see
-[Rootless sandbox client](../operations/openclaw-rootless-sandbox.md).
+For the live rootless Gateway and its sandbox daemon, see
+[Rootless Gateway and sandbox](../operations/openclaw-rootless-sandbox.md). The
+`docker compose exec openclaw` commands below describe the base rootful Compose profile; on a
+rootless host run the equivalent `docker exec openclaw` using the rootless Docker daemon
+as shown in that runbook.
 
 ## Overview
 
 OpenClaw runs as an isolated Docker Compose service. Its Gateway is published only on
 the host loopback interface and is not connected to Traefik. Its private network can
 optionally reach `ollama-compose` when the `local-model` profile is enabled.
+The standalone rootless deployment cannot resolve services on the rootful Compose
+network by name; model connectivity requires a separately configured route.
 
-- **Image:** `ghcr.io/openclaw/openclaw:2026.9.3`
+- **Image:** `ghcr.io/openclaw/openclaw:2026.9.9` (rootless deployment adds Docker CLI)
 - **Gateway:** `127.0.0.1:18789`
-- **State:** `openclaw-data` and `openclaw-ssh` Docker volumes
-- **Authentication:** Gateway token from `.env`
+- **State:** rootless bind mounts for state and SSH; legacy rootful volumes retained
+- **Authentication:** Gateway token from the protected rootless env file (copied from
+  `.env` during migration)
 
 ## Access from WSL
 
@@ -40,6 +46,22 @@ unset TOKEN
 
 Open the resulting URL in the Windows browser. The Gateway token authenticates the
 browser to OpenClaw; it is separate from model-provider OAuth and must not be shared.
+
+Restrict Control UI origins to the loopback addresses used by the SSH tunnel and rate
+limit failed token attempts:
+
+```bash
+docker compose exec openclaw node dist/index.js config set \
+  gateway.controlUi.allowedOrigins \
+  '["http://127.0.0.1:18789","http://localhost:18789"]' --strict-json
+docker compose exec openclaw node dist/index.js config set gateway.auth.rateLimit \
+  '{"maxAttempts":10,"windowMs":60000,"lockoutMs":300000}' --strict-json
+docker compose exec openclaw chmod 700 /home/node/.openclaw
+docker compose restart openclaw
+```
+
+Do not enable `dangerouslyAllowHostHeaderOriginFallback`; explicit tunnel origins avoid
+trusting an attacker-controlled Host header.
 
 ## ChatGPT Subscription
 
@@ -146,7 +168,8 @@ is no longer needed, then remove it explicitly.
 
 ## Local Model Configuration
 
-Enable Ollama and pull a model first:
+For the base rootful Compose profile, enable Ollama and pull a model first. The rootless
+Gateway cannot use the `ollama-compose` service name across Docker daemons:
 
 ```bash
 # In .env: COMPOSE_PROFILES=openclaw,local-model

@@ -228,7 +228,7 @@ services:
   # ===========================================================================
   openclaw:
     profiles: ["openclaw"]
-    image: "ghcr.io/openclaw/openclaw:${OPENCLAW_VERSION:-2026.9.3}"
+    image: "ghcr.io/openclaw/openclaw:${OPENCLAW_VERSION:-2026.9.9}"
     container_name: openclaw
     restart: unless-stopped
     init: true
