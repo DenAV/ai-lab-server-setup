@@ -41,6 +41,7 @@ REQUIRED_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "compose.traefik-cloudflare.yml"
+  "compose.openclaw-rootless.yml"
   "config/components.yml"
   "config/litellm-config.yml"
   "config/litellm-contracts.yml"
@@ -115,6 +116,7 @@ YAML_FILES=(
   "docker-compose.yml"
   "docker-compose.workers.yml"
   "compose.openclaw-cli.yml"
+  "compose.openclaw-rootless.yml"
   "compose.traefik-cloudflare.yml"
   "config/components.yml"
   "config/litellm-config.yml"
@@ -188,6 +190,7 @@ if command -v docker &>/dev/null && docker compose version &>/dev/null; then
   validate_compose "base" "docker-compose.yml"
   validate_compose "workers overlay" "docker-compose.yml" "docker-compose.workers.yml"
   validate_compose "OpenClaw overlay" "docker-compose.yml" "compose.openclaw-cli.yml"
+  validate_compose "rootless OpenClaw" "compose.openclaw-rootless.yml"
   validate_compose "Cloudflare DNS overlay" \
     "docker-compose.yml" "compose.traefik-cloudflare.yml"
   validate_compose "combined overlays" \

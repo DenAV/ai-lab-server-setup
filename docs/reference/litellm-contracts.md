@@ -29,7 +29,7 @@ client, payload, model, or provider compatibility.
 |--------|-----------|-------------|----------------------|
 | n8n `2.40.7` | Chat Completions, embeddings | Streaming, tool calling | Responses API |
 | Dify `1.13.3` | LLM/chat, text embeddings | Streaming, tool calling | Rerank, image, STT, TTS |
-| OpenClaw `2026.9.3` | Native subscription/provider routes remain unchanged | none | LiteLLM custom provider |
+| OpenClaw `2026.9.9` | Native subscription/provider routes remain unchanged | none | LiteLLM custom provider |
 
 n8n's OpenAI credential supports a custom Base URL and model discovery through
 `/models`. The current OpenAI Chat Model defaults to the Responses API, so the tested

@@ -1,7 +1,7 @@
-# Append after the host-specific sandbox socket/workspace override.
+# Legacy overlay for deployments where the Gateway and sandbox share a Docker daemon.
 services:
   openclaw:
-    image: openclaw-sandbox-client:2026.9.4-docker29.8.0
+    image: openclaw-sandbox-client:2026.9.9-docker29.8.0
     build:
       context: .
       dockerfile: Dockerfile.openclaw-sandbox
