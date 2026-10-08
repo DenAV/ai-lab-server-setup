@@ -73,6 +73,20 @@ profile_enabled() {
   esac
 }
 
+openclaw_rootless_enabled() {
+  [ "$(sed -n 's/^OPENCLAW_RUNTIME=//p' "${PROJECT_DIR}/.env" | tail -n 1)" = rootless ]
+}
+
+openclaw_rootless_running() {
+  local rootless_user runtime_dir
+  rootless_user="$(sed -n 's/^OPENCLAW_ROOTLESS_USER=//p' "${PROJECT_DIR}/.env" | tail -n 1)"
+  runtime_dir="$(sed -n 's/^OPENCLAW_ROOTLESS_RUNTIME_DIR=//p' "${PROJECT_DIR}/.env" | tail -n 1)"
+  [ -n "${rootless_user}" ] && [ -n "${runtime_dir}" ] || return 1
+  sudo -n -u "${rootless_user}" env XDG_RUNTIME_DIR="${runtime_dir}" \
+    docker -H "unix://${runtime_dir}/docker.sock" \
+    inspect openclaw --format '{{.State.Health.Status}}' | grep -qx healthy
+}
+
 echo ""
 echo "=== AI Lab — Setup Validation ==="
 echo ""
@@ -131,6 +145,9 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   for container in ${CONTAINERS}; do
     check "${container}" "docker ps --format '{{.Names}}' | grep -q '^${container}$'"
   done
+  if openclaw_rootless_enabled; then
+    check "openclaw (rootless)" "openclaw_rootless_running"
+  fi
 
   echo ""
   echo "Platform APIs:"
@@ -144,7 +161,7 @@ if [ -f "${PROJECT_DIR}/.env" ] && docker compose -f "${COMPOSE_FILE}" ps --quie
   if profile_enabled "dify"; then
     check "Dify API"          "docker exec dify-nginx curl -sf http://localhost:80 > /dev/null 2>&1 || docker exec dify-nginx wget -q --spider http://localhost:80 2>/dev/null"
   fi
-  if profile_enabled "openclaw"; then
+  if profile_enabled "openclaw" || openclaw_rootless_enabled; then
     check "OpenClaw API"      "curl -sf http://127.0.0.1:18789/healthz > /dev/null"
   fi
   if profile_enabled "litellm"; then

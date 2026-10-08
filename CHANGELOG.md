@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Standalone rootless OpenClaw Compose deployment with preserved Gateway state and
+  loopback-only access; server migration verified with a Codex turn and sandbox tool
 - Yopass `14.10.0` profile with HTTPS routing and isolated persistent Redis storage
 - Host-loopback LiteLLM Admin UI access for SSH-tunnel administration
 - Product-level Compose profiles, initial preset closures, and resolved-service validation
@@ -49,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Updated OpenClaw to `2026.9.9` and moved its Gateway to the sandbox's rootless Docker
+  daemon; documented explicit Control UI origins and authentication rate limiting
 - Restricted LiteLLM administration to its host-loopback SSH tunnel and disabled public
   Traefik discovery
 - Added persistent ChatGPT Subscription OAuth storage and documented device-flow

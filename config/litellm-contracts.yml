@@ -172,8 +172,8 @@ clients:
         requirements: [Add separate rerank, image, STT, and TTS contracts]
   openclaw:
     component: openclaw
-    version: 2026.9.3
-    adapter: custom-provider@2026.9.3
+    version: 2026.9.9
+    adapter: custom-provider@2026.9.9
     credential: native-subscription-or-provider-auth
     capabilities:
       native-subscription-runtime:
