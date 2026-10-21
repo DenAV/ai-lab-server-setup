@@ -1,5 +1,8 @@
 # OpenClaw
 
+For optional host Docker access through a separate paired native node, see
+[Host operator](../operations/openclaw-host-operator.md).
+
 For the live rootless Gateway and its sandbox daemon, see
 [Rootless Gateway and sandbox](../operations/openclaw-rootless-sandbox.md). The
 `docker compose exec openclaw` commands below describe the base rootful Compose profile; on a
