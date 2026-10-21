@@ -14,7 +14,7 @@ phase and task IDs in [Project TODO](TODO.md).
 | [P1](#p1-compose-profile-foundation) | In progress | 9/11 | Clean-host preset and LiteLLM acceptance |
 | [P2](#p2-deployment-selector) | Planned | 0/14 | Start after P1 exit gate |
 | [P3](#p3-selection-aware-operations) | Planned | 1/7 | Complete lifecycle coverage |
-| [P4](#p4-existing-host-migration) | In progress | 5/6 | Idempotency and rollback test |
+| [P4](#p4-existing-host-migration) | In progress | 6/7 | Idempotency and rollback test |
 
 Status meanings:
 
@@ -109,6 +109,8 @@ would otherwise report false failures. P3 remains planned until lifecycle covera
 - [x] Detect running components, volumes, credentials, and host overrides.
 - [x] Migrate the live OpenClaw Gateway and preserved state to the sandbox's rootless
   daemon; verify an agent turn and sandbox tool on OpenClaw 2026.9.9.
+- [x] Add a separate paired native host operator; verify restricted Docker commands,
+  approval denial, reconnection after restart, and an idempotent installer rerun.
 - [x] Generate a migration plan matching current intent.
 - [x] Preserve volumes and secrets while stopping deselected products.
 - [ ] Test upgrade and rollback against an existing-host fixture.

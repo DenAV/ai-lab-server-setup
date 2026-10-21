@@ -77,6 +77,7 @@ echo ""
 echo "Bash syntax:"
 SCRIPTS=(
   "setup.sh"
+  "scripts/setup-openclaw-operator.sh"
   "scripts/generate-env.sh"
   "scripts/validate.sh"
   "scripts/collect-diagnostics.sh"
