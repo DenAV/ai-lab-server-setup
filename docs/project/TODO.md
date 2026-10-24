@@ -86,7 +86,7 @@ counts must match the roadmap in the same change.
 
 ## P4: Existing-host migration
 
-**Status:** In progress — 6/7 tasks
+**Status:** In progress — 7/8 tasks
 
 - [x] **P4-01** Detect running components, volumes, credentials, and host overrides.
 - [x] **P4-02** Generate a migration preview matching the current installation intent.
@@ -98,3 +98,6 @@ counts must match the roadmap in the same change.
   sandbox daemon and validate a Codex agent turn plus sandbox tool on 2026.9.9.
 - [x] **P4-07** Install a dedicated native host operator with separate Docker authority;
   verify pairing, read-only commands, approval denial, restart, and installer rerun.
+- [x] **P4-08** Upgrade the Gateway and native operator to 2026.10.6 with patched
+  Node.js; test schema migration on restored state and verify core integration paths.
+  Verify CPU/RAM tuning with matching before/after no-tool agent turns.

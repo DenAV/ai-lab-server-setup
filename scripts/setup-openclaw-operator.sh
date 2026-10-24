@@ -6,9 +6,9 @@ umask 077
 ACTION="${1:-install}"
 OPERATOR=openclaw-operator
 STATE=/var/lib/openclaw-operator
-RUNTIME=/opt/openclaw-operator
-NODE_VERSION=24.21.0
-OPENCLAW_VERSION=2026.9.9
+NODE_VERSION=24.22.1
+OPENCLAW_VERSION=2026.10.6
+RUNTIME=/opt/openclaw-operator/releases/${OPENCLAW_VERSION}
 GATEWAY_USER="${OPENCLAW_GATEWAY_USER:-openclaw-sandbox}"
 SERVICE=openclaw-operator.service
 

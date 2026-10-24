@@ -7,9 +7,35 @@ daemon fails sandbox provisioning. Never substitute the rootful Docker socket.
 
 `compose.openclaw-rootless.yml` is a standalone Compose project, not an overlay on the
 rootful stack. `Dockerfile.openclaw-sandbox` adds Docker CLI to the pinned OpenClaw
-`2026.9.9` image. The Gateway runs as root **inside the rootless user namespace** so its
+`2026.10.6` image. The Gateway runs as root **inside the rootless user namespace** so its
 host identity matches the socket owner. It does not receive host root or a rootful socket.
 Update the pinned base digest and the derived image tag together for future upgrades.
+
+OpenClaw 2026.10.6 requires Node.js 24.22.1+ on the Node 24 line. The pinned
+Gateway image supplies 24.22.1. Before the live upgrade, a checksum-verified cold
+archive was restored into an isolated directory and Doctor migrated all six agent
+databases from v24 to v25 with networking disabled. Keep that archive: the old
+2026.9.9 image must not open upgraded databases without a separately approved restore.
+
+Post-upgrade checks passed for Codex responses, node execution, Codex Hosted Search,
+Qwen embeddings through OpenRouter, scheduler access, and Telegram polling. The
+upstream release removes the old system-owned weekly Skill collection review jobs;
+it does not preserve them as ordinary weekly automations. Heartbeat remains 30 minutes.
+
+Keep `TMPDIR=/home/node/.openclaw/tmp` in the Gateway environment. Model Setup creates
+a temporary inference workspace under Node's temporary directory. Container-only
+`/tmp` is not a valid sibling-sandbox source, so setup fails even when normal agent
+workspaces are mounted correctly. The configured temporary directory is already
+inside the state bind mount; no host `/tmp` mount or sandbox permission bypass is
+needed. The `openclaw.chat` setup-inference path was verified after this change.
+
+The Gateway is limited to 2 CPUs and 3 GiB RAM. `memswap_limit: 5g` preserves a
+2 GiB swap allowance rather than increasing it implicitly with the RAM limit.
+The previous 1 CPU/2 GiB limits throttled a simple test in 170 of 206 CPU periods
+and put about 0.9 GiB into swap. Equivalent first/repeated no-tool agent turns
+improved from 14.8/8.7 seconds to 6.9/2.7 seconds after the limit change; CLI wall
+times also include local command startup. No model, thinking, or tool-policy changes
+were needed. Monitor host headroom before increasing limits further on shared hosts.
 
 The existing rootful OpenClaw container and its volumes remain stopped for recovery;
 the normal rootful stack omits the `openclaw` profile and sets `OPENCLAW_RUNTIME=rootless`

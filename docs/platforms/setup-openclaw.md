@@ -17,7 +17,7 @@ optionally reach `ollama-compose` when the `local-model` profile is enabled.
 The standalone rootless deployment cannot resolve services on the rootful Compose
 network by name; model connectivity requires a separately configured route.
 
-- **Image:** `ghcr.io/openclaw/openclaw:2026.9.9` (rootless deployment adds Docker CLI)
+- **Image:** `ghcr.io/openclaw/openclaw:2026.10.6` (rootless deployment adds Docker CLI)
 - **Gateway:** `127.0.0.1:18789`
 - **State:** rootless bind mounts for state and SSH; legacy rootful volumes retained
 - **Authentication:** Gateway token from the protected rootless env file (copied from
@@ -195,6 +195,50 @@ Do not append `/v1` to the OpenClaw Ollama URL because OpenClaw uses Ollama's na
 tool-calling API.
 
 ## Validation
+
+### Web research and scheduled tasks
+
+An explicit agent tool allowlist overrides the broad `tools.profile=full` preset.
+For an agent that researches the web and manages daily tasks, allow `web_search`,
+`web_fetch`, and `automations` (called `cron` in legacy policies) in both the agent
+policy and its sandbox tool policy. Remove the corresponding deny entries without
+changing unrelated restrictions. Host Docker access is not required for these tools.
+
+The live main agent uses the bundled Codex search provider:
+
+```json
+{
+  "tools": {
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "codex",
+        "openaiCodex": { "enabled": true, "mode": "live" }
+      },
+      "fetch": { "enabled": true }
+    }
+  },
+  "cron": { "enabled": true }
+}
+```
+
+Codex Hosted Search reuses the existing Codex sign-in; it does not require a separate
+search API key. Enabling native search alone did not provide a working search route
+in the installed 2026.9.9 runtime; explicitly selecting `codex` passed a real agent
+`web_search` call. A separate turn verified `web_fetch` and scheduler status through
+the `automations` tool.
+
+Before enabling the scheduler, inspect all existing jobs and obtain approval for
+previously enabled tasks. The live scheduler retains the approved Memory Dreaming
+Promotion job. Heartbeat is enabled for `main` every 30 minutes through
+`agents.entries.main.heartbeat.every="30m"`. Skill Workshop autonomous mode is
+`auto`. OpenClaw 2026.10.6 retires the old weekly Skill collection review jobs and
+removes their declarations during migration; autonomous Workshop review is now
+experience-driven. A separate weekly task needs an explicit operator decision;
+do not recreate system-owned retired jobs by restoring old scheduler database rows.
+Specify time, timezone,
+agent, and Telegram delivery target when creating a daily report task. Tool availability
+does not mean that task has already been created or its attachment delivery verified.
 
 ```bash
 curl -fsS http://127.0.0.1:18789/healthz

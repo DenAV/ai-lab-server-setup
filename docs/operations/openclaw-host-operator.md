@@ -1,6 +1,6 @@
 # OpenClaw Host Operator
 
-The optional native `host-operator` node runs OpenClaw 2026.9.9 as the dedicated
+The optional native `host-operator` node runs OpenClaw 2026.10.6 as the dedicated
 `openclaw-operator` system account. The existing containerized Gateway connects to it
 through native device pairing. Telegram and sandbox defaults are unchanged.
 
@@ -27,6 +27,15 @@ stored in the operator service. Identity and credentials live in the protected
 Rerunning preserves credentials and approval policy and verifies connection plus
 read-only `id` and `docker ps` calls through the Gateway. It does not reinstall an
 existing runtime, rotate credentials, or automatically roll back on failure.
+
+Runtime installations are versioned under `/opt/openclaw-operator/releases/`.
+The live 2026.10.6 service uses a root-owned systemd drop-in selecting its Node.js
+24.22.1 and package paths. Its previous installation remains retained. Upgrades must
+stop the operator and back up its credential state before migrating with the matching
+Doctor. Do not run npm installation as a user that already has Docker authority;
+prepare a candidate as an isolated build user, then make the files root-owned.
+The 2026.10.6 node adds signed execution-context support; reapprove only the existing
+device identity and previously approved command list, not unrelated pending nodes.
 
 ## Commands and approvals
 
@@ -59,9 +68,13 @@ from the existing Telegram chat. The Telegram approval UI for non-allowlisted co
 has not been verified. A sandbox status of `docker/all` and absence of
 Docker inside the sandbox do not prevent execution through the separate `node_exec` tool.
 
-The rootless Gateway memory limit is 2 GiB. A real agent turn exhausted the previous
-1 GiB limit and triggered a kernel cgroup OOM kill. After increasing the limit, both
-node-tool turns completed successfully; the rootful socket remains outside the Gateway.
+The rootless Gateway has 2 CPUs and a 3 GiB RAM limit, with a 5 GiB combined
+RAM-plus-swap limit (2 GiB swap allowance). The original 1 GiB limit caused a cgroup
+OOM kill; 2 GiB restored node-tool execution but later caused memory pressure and
+swapping under the larger runtime. Increasing from 1 CPU/2 GiB to 2 CPUs/3 GiB
+reduced two synthetic no-tool response times from 20.2/13.4 seconds to 10.0/5.3
+seconds. These are small diagnostic samples, not a latency guarantee. The rootful
+socket remains outside the Gateway.
 
 ## Operation and disabling host access
 

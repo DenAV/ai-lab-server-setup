@@ -53,6 +53,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Tuned the rootless OpenClaw Gateway to 2 CPUs and 3 GiB RAM while preserving its
+  2 GiB swap allowance; repeated synthetic agent turns confirmed lower latency
+- Moved rootless Gateway temporary workspaces onto its existing state bind mount so
+  OpenClaw Model Setup inference checks can provision sibling sandboxes
+- Updated OpenClaw Gateway and native host operator to `2026.10.6` with Node.js
+  `24.22.1`; verified schema migration on restored state before production activation
+- Documented upstream retirement of weekly Skill collection review jobs in favor of
+  experience-driven Skill Workshop; retained the main Heartbeat at 30 minutes
+- Enabled main-agent web research through Codex Hosted Search and scheduler tools;
+  documented effective allowlists and approval of existing scheduled jobs
 - Raised the rootless Gateway memory limit to 2 GiB after a confirmed cgroup OOM;
   documented the approved main-agent node routing and verified real node-tool turns
 - Updated OpenClaw to `2026.9.9` and moved its Gateway to the sandbox's rootless Docker
