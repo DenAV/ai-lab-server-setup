@@ -53,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Confined OpenClaw host operations to its separate rootless Docker daemon and
+  protected non-root service; added persistent socket ACLs and removed rootful
+  Docker group access. Enabled user-approved sandbox autonomy and explicit
+  Telegram-owner authorization; verified native scheduling and Markdown delivery.
 - Tuned the rootless OpenClaw Gateway to 2 CPUs and 3 GiB RAM while preserving its
   2 GiB swap allowance; repeated synthetic agent turns confirmed lower latency
 - Moved rootless Gateway temporary workspaces onto its existing state bind mount so

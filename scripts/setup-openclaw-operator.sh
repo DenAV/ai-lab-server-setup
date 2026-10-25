@@ -10,6 +10,8 @@ NODE_VERSION=24.22.1
 OPENCLAW_VERSION=2026.10.6
 RUNTIME=/opt/openclaw-operator/releases/${OPENCLAW_VERSION}
 GATEWAY_USER="${OPENCLAW_GATEWAY_USER:-openclaw-sandbox}"
+OFFICE_GROUP=openclaw-office
+OFFICE_DIR="${OPENCLAW_OFFICE_DIR:-/srv/openclaw-office}"
 SERVICE=openclaw-operator.service
 
 [[ "${EUID}" = 0 ]] || { echo "Run with sudo." >&2; exit 1; }
@@ -23,14 +25,32 @@ if [[ "${ACTION}" = disable ]]; then
   if id -nG "${OPERATOR}" | tr ' ' '\n' | grep -qx docker; then
     gpasswd -d "${OPERATOR}" docker
   fi
-  echo "Operator stopped and Docker group access removed. State retained; revoke its paired device separately."
+  if id -nG "${OPERATOR}" | tr ' ' '\n' | grep -qx "${OFFICE_GROUP}"; then
+    gpasswd -d "${OPERATOR}" "${OFFICE_GROUP}"
+  fi
+  if id "${GATEWAY_USER}" >/dev/null 2>&1; then
+    gateway_uid="$(id -u "${GATEWAY_USER}")"
+    gateway_home="$(getent passwd "${GATEWAY_USER}" | cut -d: -f6)"
+    rm -f "${gateway_home}/.config/systemd/user/docker.service.d/30-openclaw-operator-acl.conf"
+    setfacl -x "u:${OPERATOR}" "/run/user/${gateway_uid}/docker.sock" 2>/dev/null || true
+    setfacl -x "u:${OPERATOR}" "/run/user/${gateway_uid}" 2>/dev/null || true
+    runuser -u "${GATEWAY_USER}" -- env XDG_RUNTIME_DIR="/run/user/${gateway_uid}" \
+      systemctl --user daemon-reload
+  fi
+  echo "Operator stopped and Docker access removed. State retained; revoke its paired device separately."
   exit 0
 fi
 
 [[ "$(uname -m)" = x86_64 ]] || { echo "This installer requires x86_64." >&2; exit 1; }
-for cmd in curl tar sha256sum python3 runuser systemctl getent; do command -v "${cmd}" >/dev/null; done
-getent group docker >/dev/null
+for cmd in curl tar sha256sum python3 runuser systemctl getent setfacl gpasswd; do command -v "${cmd}" >/dev/null; done
 GATEWAY_UID="$(id -u "${GATEWAY_USER}")"
+GATEWAY_GROUP="$(id -gn "${GATEWAY_USER}")"
+GATEWAY_HOME="$(getent passwd "${GATEWAY_USER}" | cut -d: -f6)"
+ROOTLESS_SOCKET="/run/user/${GATEWAY_UID}/docker.sock"
+[[ "${OFFICE_DIR}" = /* && -d "${OFFICE_DIR}" && -S "${ROOTLESS_SOCKET}" ]] || {
+  echo "An absolute existing office directory and running rootless Docker are required." >&2
+  exit 1
+}
 gateway() {
   runuser -u "${GATEWAY_USER}" -- env XDG_RUNTIME_DIR="/run/user/${GATEWAY_UID}" \
     docker -H "unix:///run/user/${GATEWAY_UID}/docker.sock" exec openclaw node dist/index.js "$@"
@@ -42,6 +62,14 @@ if ! id "${OPERATOR}" >/dev/null 2>&1; then
   useradd --system --create-home --home-dir "${STATE}" --shell /usr/sbin/nologin "${OPERATOR}"
 fi
 [[ "$(getent passwd "${OPERATOR}" | cut -d: -f6)" = "${STATE}" ]] || exit 1
+if systemctl is-active --quiet "${SERVICE}"; then
+  systemctl stop "${SERVICE}"
+fi
+if id -nG "${OPERATOR}" | tr ' ' '\n' | grep -qx docker; then
+  gpasswd -d "${OPERATOR}" docker
+fi
+getent group "${OFFICE_GROUP}" >/dev/null || groupadd --system "${OFFICE_GROUP}"
+usermod -aG "${OFFICE_GROUP}" "${OPERATOR}"
 install -d -o "${OPERATOR}" -g "${OPERATOR}" -m 700 "${STATE}"
 install -d -o root -g root -m 755 "${RUNTIME}"
 
@@ -59,7 +87,7 @@ fi
 [[ "$("${RUNTIME}/node/bin/node" --version)" = "v${NODE_VERSION}" ]] || exit 1
 
 if [[ ! -f "${RUNTIME}/app/node_modules/openclaw/openclaw.mjs" ]]; then
-  # Install dependencies before granting Docker access, without running npm as root.
+  # Install dependencies without rootful Docker authority or npm running as root.
   if id -nG "${OPERATOR}" | tr ' ' '\n' | grep -qx docker; then
     echo "Refusing npm install while operator has Docker access; disable it first." >&2
     exit 1
@@ -99,14 +127,25 @@ Wants=network-online.target
 Type=simple
 User=${OPERATOR}
 Group=${OPERATOR}
-SupplementaryGroups=docker
+SupplementaryGroups=${OFFICE_GROUP}
 WorkingDirectory=${STATE}
 Environment=HOME=${STATE}
 Environment=OPENCLAW_STATE_DIR=${STATE}/.openclaw
 Environment=OPENCLAW_NO_AUTO_UPDATE=1
+Environment=DOCKER_HOST=unix://${ROOTLESS_SOCKET}
 Environment=PATH=${RUNTIME}/node/bin:/usr/local/bin:/usr/bin:/bin
 UMask=0077
 NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=${STATE} ${OFFICE_DIR}
+PrivateDevices=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+CapabilityBoundingSet=
 ExecStart=${RUNTIME}/node/bin/node ${RUNTIME}/app/node_modules/openclaw/openclaw.mjs node run --host 127.0.0.1 --port 18789 --display-name host-operator --commands system.run.prepare,system.run,system.which,system.execApprovals.get,system.execApprovals.set
 Restart=on-failure
 RestartSec=10
@@ -118,7 +157,25 @@ WantedBy=multi-user.target
 EOF
 chmod 644 "${unit}"
 systemd-analyze verify "${unit}"
-usermod -aG docker "${OPERATOR}"
+# Persist only rootless socket access across daemon/socket recreation. Do not
+# restart Docker: that would interrupt the Gateway and its running sandboxes.
+acl_dropin="${GATEWAY_HOME}/.config/systemd/user/docker.service.d"
+install -d -o "${GATEWAY_USER}" -g "${GATEWAY_GROUP}" -m 755 "${acl_dropin}"
+cat > "${acl_dropin}/30-openclaw-operator-acl.conf" <<EOF
+[Service]
+ExecStartPost=/usr/bin/setfacl -m u:${OPERATOR}:--x /run/user/${GATEWAY_UID}
+ExecStartPost=/usr/bin/setfacl -m u:${OPERATOR}:rw ${ROOTLESS_SOCKET}
+EOF
+chown "${GATEWAY_USER}:${GATEWAY_GROUP}" "${acl_dropin}/30-openclaw-operator-acl.conf"
+chmod 644 "${acl_dropin}/30-openclaw-operator-acl.conf"
+setfacl -m "u:${OPERATOR}:--x" "/run/user/${GATEWAY_UID}"
+setfacl -m "u:${OPERATOR}:rw" "${ROOTLESS_SOCKET}"
+runuser -u "${GATEWAY_USER}" -- env XDG_RUNTIME_DIR="/run/user/${GATEWAY_UID}" \
+  systemctl --user daemon-reload
+if runuser -u "${OPERATOR}" -- test -w /var/run/docker.sock; then
+  echo "Refusing host operator startup: rootful Docker socket remains writable." >&2
+  exit 1
+fi
 systemctl daemon-reload
 if [[ ! -f "${STATE}/enrolled-device" ]]; then
   export GATEWAY_USER GATEWAY_UID OPERATOR STATE RUNTIME

@@ -14,7 +14,7 @@ phase and task IDs in [Project TODO](TODO.md).
 | [P1](#p1-compose-profile-foundation) | In progress | 9/11 | Clean-host preset and LiteLLM acceptance |
 | [P2](#p2-deployment-selector) | Planned | 0/14 | Start after P1 exit gate |
 | [P3](#p3-selection-aware-operations) | Planned | 1/7 | Complete lifecycle coverage |
-| [P4](#p4-existing-host-migration) | In progress | 7/8 | Idempotency and rollback test |
+| [P4](#p4-existing-host-migration) | In progress | 8/9 | Idempotency and rollback test |
 
 Status meanings:
 
@@ -114,6 +114,9 @@ would otherwise report false failures. P3 remains planned until lifecycle covera
 - [x] Upgrade the Gateway and native operator to 2026.10.6 after testing schema
   migration on restored state; verify Codex, node execution, search, and embeddings.
   Tune Gateway CPU/RAM limits using before/after agent latency and cgroup evidence.
+- [x] Enable user-approved OpenClaw sandbox autonomy and explicit Telegram-owner
+  authorization; confine the host operator to rootless Docker and verify native
+  daily scheduling, Markdown delivery, and denial of rootful Docker access.
 - [x] Generate a migration plan matching current intent.
 - [x] Preserve volumes and secrets while stopping deselected products.
 - [ ] Test upgrade and rollback against an existing-host fixture.

@@ -86,7 +86,7 @@ counts must match the roadmap in the same change.
 
 ## P4: Existing-host migration
 
-**Status:** In progress — 7/8 tasks
+**Status:** In progress — 8/9 tasks
 
 - [x] **P4-01** Detect running components, volumes, credentials, and host overrides.
 - [x] **P4-02** Generate a migration preview matching the current installation intent.
@@ -101,3 +101,6 @@ counts must match the roadmap in the same change.
 - [x] **P4-08** Upgrade the Gateway and native operator to 2026.10.6 with patched
   Node.js; test schema migration on restored state and verify core integration paths.
   Verify CPU/RAM tuning with matching before/after no-tool agent turns.
+- [x] **P4-09** Enable user-approved sandbox autonomy and Telegram-owner tools while
+  removing rootful Docker authority from the host operator. Verify native daily
+  scheduling, Markdown file delivery, sandbox networking, and rootful socket denial.

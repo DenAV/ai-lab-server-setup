@@ -247,6 +247,18 @@ fi
 echo ""
 echo "Security:"
 
+OPERATOR_SCRIPT="${PROJECT_DIR}/scripts/setup-openclaw-operator.sh"
+if ! grep -Eq 'SupplementaryGroups=docker|usermod -aG docker' "${OPERATOR_SCRIPT}" \
+  && grep -Fq 'Environment=DOCKER_HOST=unix://${ROOTLESS_SOCKET}' "${OPERATOR_SCRIPT}" \
+  && grep -Fq 'ProtectSystem=strict' "${OPERATOR_SCRIPT}" \
+  && grep -Fq 'PrivateTmp=true' "${OPERATOR_SCRIPT}" \
+  && grep -Fq 'CapabilityBoundingSet=' "${OPERATOR_SCRIPT}" \
+  && grep -Fq '30-openclaw-operator-acl.conf' "${OPERATOR_SCRIPT}"; then
+  pass "OpenClaw operator retains rootless-only Docker and host isolation"
+else
+  fail "OpenClaw operator Docker/host isolation regressed"
+fi
+
 # Check for common secret patterns in tracked files
 SECRET_PATTERNS="(password|secret|token|api.key)\s*[:=]\s*['\"]?[a-zA-Z0-9+/]{16,}"
 if git -C "${PROJECT_DIR}" ls-files 2>/dev/null | while read -r f; do
